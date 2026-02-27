@@ -1,29 +1,24 @@
 import React from 'react';
 import productService from '../services/productService';
 import ProductCard from '../components/ProductCard';
+import SearchBar from '../components/SearchBar';
 import Spinner from '../components/Spinner';
+import LanguageContext from '../context/LanguageContext';
 import { toast } from 'react-toastify';
 import { PageHeader } from '../styledComponents/LayoutStyles';
 import { EmptyState } from '../styledComponents/FormStyles';
 
-const CATEGORY_NAMES = {
-    grains: 'Grains, Rice & Pulses',
-    milk: 'Milk & Dairy',
-    snacks: 'Snacks',
-    spices: 'Spices',
-    oils: 'Oils',
-    condiments: 'Condiments',
-    cleaning: 'Cleaning Supplies',
-    personal: 'Personal Care & Hygiene',
-};
-
 class ProductsPage extends React.Component {
+    static contextType = LanguageContext;
+
     constructor(props) {
         super(props);
         this.state = {
             products: [],
+            filteredProducts: [],
             loading: true,
             error: null,
+            searchQuery: '',
         };
     }
 
@@ -41,11 +36,25 @@ class ProductsPage extends React.Component {
         this.setState({ loading: true, error: null });
         try {
             const products = await productService.getProducts(this.props.activeCategory || null);
-            this.setState({ products, loading: false });
+            this.setState({ products, filteredProducts: products, loading: false });
         } catch (err) {
             this.setState({ error: 'Failed to load products', loading: false });
             toast.error('Failed to load products');
         }
+    };
+
+    handleSearch = (searchQuery) => {
+        const { products } = this.state;
+        if (!searchQuery.trim()) {
+            this.setState({ filteredProducts: products, searchQuery: '' });
+            return;
+        }
+
+        const filtered = products.filter((product) =>
+            product.name.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+
+        this.setState({ filteredProducts: filtered, searchQuery });
     };
 
     handleUpdateProduct = async (id, data) => {
@@ -57,21 +66,46 @@ class ProductsPage extends React.Component {
         }
     };
 
+    handleDeleteProduct = async (id) => {
+        try {
+            await productService.deleteProduct(id);
+            toast.success(this.context.getText('deleteSuccess'));
+            this.fetchProducts();
+        } catch (err) {
+            toast.error(this.context.getText('somethingWentWrong'));
+        }
+    };
+
     render() {
+        const { getText } = this.context;
         const { activeCategory } = this.props;
-        const { products, loading, error } = this.state;
+        const { filteredProducts, loading, error } = this.state;
+
+        const categoryKeys = {
+            grains: 'grains',
+            milk: 'milk',
+            snacks: 'snacks',
+            spices: 'spices',
+            oils: 'oils',
+            condiments: 'condiments',
+            cleaning: 'cleaning',
+            personal: 'personal',
+        };
+
         const title = activeCategory
-            ? CATEGORY_NAMES[activeCategory] || activeCategory
-            : 'All Products';
+            ? getText(categoryKeys[activeCategory] || activeCategory)
+            : getText('allProducts');
 
         return (
             <div>
                 <PageHeader>
                     <h1>{title}</h1>
-                    <p>{products.length} products available</p>
+                    <p>{filteredProducts.length} {getText('available')}</p>
                 </PageHeader>
 
-                {loading && <Spinner fullPage text="Loading products..." />}
+                <SearchBar onSearch={this.handleSearch} />
+
+                {loading && <Spinner fullPage text={getText('loading')} />}
 
                 {error && (
                     <div className="alert alert-danger" role="alert">
@@ -79,21 +113,22 @@ class ProductsPage extends React.Component {
                     </div>
                 )}
 
-                {!loading && !error && products.length === 0 && (
+                {!loading && !error && filteredProducts.length === 0 && (
                     <EmptyState>
                         <div className="empty-icon">📦</div>
-                        <h3>No Products Found</h3>
-                        <p>There are no products in this category yet.</p>
+                        <h3>{getText('noResults')}</h3>
+                        <p>{getText('noItemsFound')}</p>
                     </EmptyState>
                 )}
 
-                {!loading && !error && products.length > 0 && (
+                {!loading && !error && filteredProducts.length > 0 && (
                     <div className="row g-3">
-                        {products.map((product) => (
+                        {filteredProducts.map((product) => (
                             <div key={product.id} className="col-12 col-sm-6 col-lg-4 col-xl-3">
                                 <ProductCard
                                     product={product}
                                     onUpdateProduct={this.handleUpdateProduct}
+                                    onDeleteProduct={this.handleDeleteProduct}
                                 />
                             </div>
                         ))}

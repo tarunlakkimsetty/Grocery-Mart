@@ -1,6 +1,7 @@
 import React from 'react';
 import AuthContext from '../context/AuthContext';
 import CartContext from '../context/CartContext';
+import LanguageContext from '../context/LanguageContext';
 import { toast } from 'react-toastify';
 import {
     ProductCardWrapper,
@@ -8,7 +9,7 @@ import {
     CardBody,
     CardActions,
 } from '../styledComponents/CardStyles';
-import { PrimaryButton, SecondaryButton, WarningButton } from '../styledComponents/ButtonStyles';
+import { PrimaryButton, SecondaryButton, WarningButton, DangerButton } from '../styledComponents/ButtonStyles';
 import { ModalOverlay, ModalContent } from '../styledComponents/FormStyles';
 
 const CATEGORY_GRADIENTS = {
@@ -30,33 +31,46 @@ class ProductCard extends React.Component {
         this.state = {
             quantity: 1,
             showEditModal: false,
+            editName: props.product.name,
             editPrice: props.product.price,
             editStock: props.product.stock,
         };
     }
 
-    handleAddToCart = (cartCtx) => {
+    handleAddToCart = (cartCtx, langCtx) => {
         const { product } = this.props;
         const qty = parseInt(this.state.quantity);
         if (qty < 1 || qty > product.stock) {
-            toast.warning('Please enter a valid quantity');
+            toast.warning(langCtx.getText('quantityInvalid'));
             return;
         }
         cartCtx.addToCart(product, qty);
-        toast.success(`${product.name} added to cart!`);
+        const translatedName = langCtx.getText(product.name) || product.name;
+        toast.success(`${translatedName} ${langCtx.getText('addToCart')}🛒`);
         this.setState({ quantity: 1 });
     };
 
-    handleSaveEdit = () => {
+    handleSaveEdit = (langCtx) => {
         const { product, onUpdateProduct } = this.props;
         if (onUpdateProduct) {
             onUpdateProduct(product.id, {
+                name: this.state.editName,
                 price: parseFloat(this.state.editPrice),
                 stock: parseInt(this.state.editStock),
             });
         }
         this.setState({ showEditModal: false });
-        toast.success('Product updated successfully!');
+        toast.success(langCtx.getText('updateSuccess'));
+    };
+
+    handleDeleteProduct = (langCtx) => {
+        const { product, onDeleteProduct } = this.props;
+        if (window.confirm(`${langCtx.getText('confirmDelete')}`)) {
+            if (onDeleteProduct) {
+                onDeleteProduct(product.id);
+                toast.success(langCtx.getText('deleteSuccess'));
+            }
+        }
     };
 
     render() {
@@ -66,97 +80,122 @@ class ProductCard extends React.Component {
         const gradient = CATEGORY_GRADIENTS[product.category] || CATEGORY_GRADIENTS.grains;
 
         return (
-            <>
-                <ProductCardWrapper>
-                    <CardImage $bg={gradient} $inStock={product.stock > 0}>
-                        <span>{product.emoji || '📦'}</span>
-                        <span className="stock-badge">
-                            {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
-                        </span>
-                    </CardImage>
-                    <CardBody>
-                        <div className="card-title">{product.name}</div>
-                        <div className="card-category">{product.category}</div>
-                        <div className="card-price">
-                            ₹{product.price} <span className="unit">/{product.unit || 'unit'}</span>
-                        </div>
-                    </CardBody>
-                    <CardActions>
-                        {isAdmin ? (
-                            <>
-                                <WarningButton onClick={() => this.setState({ showEditModal: true, editPrice: product.price, editStock: product.stock })}>
-                                    ✏️ Edit
-                                </WarningButton>
-                            </>
-                        ) : (
-                            <>
-                                <input
-                                    type="number"
-                                    className="qty-input"
-                                    min="1"
-                                    max={product.stock}
-                                    value={this.state.quantity}
-                                    onChange={(e) => this.setState({ quantity: e.target.value })}
-                                    disabled={product.stock <= 0}
-                                />
-                                <CartContext.Consumer>
-                                    {(cartCtx) => (
-                                        <PrimaryButton
-                                            onClick={() => this.handleAddToCart(cartCtx)}
-                                            disabled={product.stock <= 0}
-                                        >
-                                            🛒 Add
-                                        </PrimaryButton>
-                                    )}
-                                </CartContext.Consumer>
-                            </>
-                        )}
-                    </CardActions>
-                </ProductCardWrapper>
+            <LanguageContext.Consumer>
+                {(langCtx) => {
+                    const translatedName = langCtx.getText(product.name) || product.name;
+                    const inStockText = langCtx.getText('inStock');
+                    const outOfStockText = langCtx.getText('outOfStock');
 
-                {/* Edit Modal for Admin */}
-                {this.state.showEditModal && (
-                    <ModalOverlay onClick={() => this.setState({ showEditModal: false })}>
-                        <ModalContent onClick={(e) => e.stopPropagation()}>
-                            <div className="modal-header">
-                                <h3>Edit Product</h3>
-                                <button className="close-btn" onClick={() => this.setState({ showEditModal: false })}>×</button>
-                            </div>
-                            <div className="modal-body">
-                                <div className="mb-3">
-                                    <label className="form-label fw-semibold">Product Name</label>
-                                    <input type="text" className="form-control" value={product.name} readOnly disabled />
-                                </div>
-                                <div className="mb-3">
-                                    <label className="form-label fw-semibold">Price (₹)</label>
-                                    <input
-                                        type="number"
-                                        className="form-control"
-                                        value={this.state.editPrice}
-                                        onChange={(e) => this.setState({ editPrice: e.target.value })}
-                                        min="0"
-                                        step="0.01"
-                                    />
-                                </div>
-                                <div className="mb-3">
-                                    <label className="form-label fw-semibold">Stock</label>
-                                    <input
-                                        type="number"
-                                        className="form-control"
-                                        value={this.state.editStock}
-                                        onChange={(e) => this.setState({ editStock: e.target.value })}
-                                        min="0"
-                                    />
-                                </div>
-                            </div>
-                            <div className="modal-footer">
-                                <SecondaryButton onClick={() => this.setState({ showEditModal: false })}>Cancel</SecondaryButton>
-                                <PrimaryButton onClick={this.handleSaveEdit}>Save Changes</PrimaryButton>
-                            </div>
-                        </ModalContent>
-                    </ModalOverlay>
-                )}
-            </>
+                    return (
+                        <>
+                            <ProductCardWrapper>
+                                <CardImage $bg={gradient} $inStock={product.stock > 0}>
+                                    <span>{product.emoji || '📦'}</span>
+                                    <span className="stock-badge">
+                                        {product.stock > 0 ? `${product.stock} ${inStockText}` : outOfStockText}
+                                    </span>
+                                </CardImage>
+                                <CardBody>
+                                    <div className="card-title">{translatedName}</div>
+                                    <div className="card-category">{langCtx.getText(product.category)}</div>
+                                    <div className="card-price">
+                                        ₹{product.price} <span className="unit">/{product.unit || 'unit'}</span>
+                                    </div>
+                                </CardBody>
+                                <CardActions>
+                                    {isAdmin ? (
+                                        <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
+                                            <WarningButton
+                                                onClick={() => this.setState({ showEditModal: true, editName: product.name, editPrice: product.price, editStock: product.stock })}
+                                                style={{ flex: 1 }}
+                                            >
+                                                ✏️ {langCtx.getText('edit')}
+                                            </WarningButton>
+                                            <DangerButton
+                                                onClick={() => this.handleDeleteProduct(langCtx)}
+                                                style={{ flex: 1 }}
+                                            >
+                                                🗑️ {langCtx.getText('delete')}
+                                            </DangerButton>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <input
+                                                type="number"
+                                                className="qty-input"
+                                                min="1"
+                                                max={product.stock}
+                                                value={this.state.quantity}
+                                                onChange={(e) => this.setState({ quantity: e.target.value })}
+                                                disabled={product.stock <= 0}
+                                            />
+                                            <CartContext.Consumer>
+                                                {(cartCtx) => (
+                                                    <PrimaryButton
+                                                        onClick={() => this.handleAddToCart(cartCtx, langCtx)}
+                                                        disabled={product.stock <= 0}
+                                                    >
+                                                        🛒 {langCtx.getText('addToCart')}
+                                                    </PrimaryButton>
+                                                )}
+                                            </CartContext.Consumer>
+                                        </>
+                                    )}
+                                </CardActions>
+                            </ProductCardWrapper>
+
+                            {/* Edit Modal for Admin */}
+                            {this.state.showEditModal && (
+                                <ModalOverlay onClick={() => this.setState({ showEditModal: false })}>
+                                    <ModalContent onClick={(e) => e.stopPropagation()}>
+                                        <div className="modal-header">
+                                            <h3>{langCtx.getText('edit')}</h3>
+                                            <button className="close-btn" onClick={() => this.setState({ showEditModal: false })}>×</button>
+                                        </div>
+                                        <div className="modal-body">
+                                            <div className="mb-3">
+                                                <label className="form-label fw-semibold">{langCtx.getText('productName')}</label>
+                                                <input
+                                                    type="text"
+                                                    className="form-control"
+                                                    value={this.state.editName}
+                                                    onChange={(e) => this.setState({ editName: e.target.value })}
+                                                    placeholder={langCtx.getText('productName')}
+                                                />
+                                            </div>
+                                            <div className="mb-3">
+                                                <label className="form-label fw-semibold">{langCtx.getText('price')} (₹)</label>
+                                                <input
+                                                    type="number"
+                                                    className="form-control"
+                                                    value={this.state.editPrice}
+                                                    onChange={(e) => this.setState({ editPrice: e.target.value })}
+                                                    min="0"
+                                                    step="0.01"
+                                                />
+                                            </div>
+                                            <div className="mb-3">
+                                                <label className="form-label fw-semibold">{langCtx.getText('stock')}</label>
+                                                <input
+                                                    type="number"
+                                                    className="form-control"
+                                                    value={this.state.editStock}
+                                                    onChange={(e) => this.setState({ editStock: e.target.value })}
+                                                    min="0"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="modal-footer">
+                                            <SecondaryButton onClick={() => this.setState({ showEditModal: false })}>{langCtx.getText('cancel')}</SecondaryButton>
+                                            <PrimaryButton onClick={() => this.handleSaveEdit(langCtx)}>{langCtx.getText('save')}</PrimaryButton>
+                                        </div>
+                                    </ModalContent>
+                                </ModalOverlay>
+                            )}
+                        </>
+                    );
+                }}
+            </LanguageContext.Consumer>
         );
     }
 }

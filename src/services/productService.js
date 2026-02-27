@@ -126,6 +126,20 @@ const productService = {
             throw new Error('Product not found');
         }
     },
+
+    deleteProduct: async (id) => {
+        try {
+            await axiosInstance.delete(`/products/${id}`);
+            return { success: true };
+        } catch {
+            const idx = mockProductStore.findIndex((p) => p.id === parseInt(id));
+            if (idx !== -1) {
+                mockProductStore.splice(idx, 1);
+                return { success: true };
+            }
+            throw new Error('Product not found');
+        }
+    },
 };
 
 export default productService;

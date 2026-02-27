@@ -1,5 +1,6 @@
 import React from 'react';
 import productService from '../services/productService';
+import LanguageContext from '../context/LanguageContext';
 import { toast } from 'react-toastify';
 import { PageHeader } from '../styledComponents/LayoutStyles';
 import { FormWrapper } from '../styledComponents/FormStyles';
@@ -85,142 +86,146 @@ class AddProductPage extends React.Component {
         const { name, category, price, stock, unit, emoji, errors, loading, success } = this.state;
 
         return (
-            <div>
-                <PageHeader>
-                    <h1>➕ Add New Product</h1>
-                    <p>Add a product to the inventory</p>
-                </PageHeader>
+            <LanguageContext.Consumer>
+                {(langCtx) => (
+                    <div>
+                        <PageHeader>
+                            <h1>➕ {langCtx.getText('addNewProduct')}</h1>
+                            <p>{langCtx.getText('productAddedMessage')}</p>
+                        </PageHeader>
 
-                <div className="row">
-                    <div className="col-12 col-lg-8 col-xl-6">
-                        <FormWrapper>
-                            <div className="form-title">📦 Product Details</div>
+                        <div className="row">
+                            <div className="col-12 col-lg-8 col-xl-6">
+                                <FormWrapper>
+                                    <div className="form-title">📦 {langCtx.getText('selectProductCategory')}</div>
 
-                            {success && (
-                                <div className="alert alert-success py-2" style={{ fontSize: '0.875rem' }}>
-                                    ✅ Product added successfully!
-                                </div>
-                            )}
+                                    {success && (
+                                        <div className="alert alert-success py-2" style={{ fontSize: '0.875rem' }}>
+                                            ✅ {langCtx.getText('productAdded')}
+                                        </div>
+                                    )}
 
-                            <form onSubmit={this.handleSubmit}>
-                                <div className="mb-3">
-                                    <label className="form-label fw-semibold">Product Name</label>
-                                    <input
-                                        type="text"
-                                        className={`form-control ${errors.name ? 'is-invalid' : ''}`}
-                                        value={name}
-                                        onChange={this.handleChange('name')}
-                                        placeholder="e.g. Basmati Rice (5kg)"
-                                    />
-                                    {errors.name && <div className="invalid-feedback">{errors.name}</div>}
-                                </div>
+                                    <form onSubmit={this.handleSubmit}>
+                                        <div className="mb-3">
+                                            <label className="form-label fw-semibold">{langCtx.getText('productName')}</label>
+                                            <input
+                                                type="text"
+                                                className={`form-control ${errors.name ? 'is-invalid' : ''}`}
+                                                value={name}
+                                                onChange={this.handleChange('name')}
+                                                placeholder={langCtx.getText('enterProductName')}
+                                            />
+                                            {errors.name && <div className="invalid-feedback">{errors.name}</div>}
+                                        </div>
 
-                                <div className="row mb-3">
-                                    <div className="col-8">
-                                        <label className="form-label fw-semibold">Category</label>
-                                        <select
-                                            className="form-select"
-                                            value={category}
-                                            onChange={this.handleChange('category')}
-                                        >
-                                            {CATEGORIES.map((cat) => (
-                                                <option key={cat.value} value={cat.value}>
-                                                    {cat.label}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="col-4">
-                                        <label className="form-label fw-semibold">Emoji</label>
-                                        <input
-                                            type="text"
-                                            className="form-control text-center"
-                                            value={emoji}
-                                            onChange={this.handleChange('emoji')}
-                                            style={{ fontSize: '1.5rem' }}
-                                        />
-                                    </div>
-                                </div>
+                                        <div className="row mb-3">
+                                            <div className="col-8">
+                                                <label className="form-label fw-semibold">{langCtx.getText('selectProductCategory')}</label>
+                                                <select
+                                                    className="form-select"
+                                                    value={category}
+                                                    onChange={this.handleChange('category')}
+                                                >
+                                                    {CATEGORIES.map((cat) => (
+                                                        <option key={cat.value} value={cat.value}>
+                                                            {cat.label}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div className="col-4">
+                                                <label className="form-label fw-semibold">Emoji</label>
+                                                <input
+                                                    type="text"
+                                                    className="form-control text-center"
+                                                    value={emoji}
+                                                    onChange={this.handleChange('emoji')}
+                                                    style={{ fontSize: '1.5rem' }}
+                                                />
+                                            </div>
+                                        </div>
 
-                                <div className="row mb-3">
-                                    <div className="col-4">
-                                        <label className="form-label fw-semibold">Price (₹)</label>
-                                        <input
-                                            type="number"
-                                            className={`form-control ${errors.price ? 'is-invalid' : ''}`}
-                                            value={price}
-                                            onChange={this.handleChange('price')}
-                                            min="0"
-                                            step="0.01"
-                                            placeholder="0.00"
-                                        />
-                                        {errors.price && <div className="invalid-feedback">{errors.price}</div>}
-                                    </div>
-                                    <div className="col-4">
-                                        <label className="form-label fw-semibold">Stock</label>
-                                        <input
-                                            type="number"
-                                            className={`form-control ${errors.stock ? 'is-invalid' : ''}`}
-                                            value={stock}
-                                            onChange={this.handleChange('stock')}
-                                            min="0"
-                                            placeholder="0"
-                                        />
-                                        {errors.stock && <div className="invalid-feedback">{errors.stock}</div>}
-                                    </div>
-                                    <div className="col-4">
-                                        <label className="form-label fw-semibold">Unit</label>
-                                        <select
-                                            className="form-select"
-                                            value={unit}
-                                            onChange={this.handleChange('unit')}
-                                        >
-                                            <option value="pack">Pack</option>
-                                            <option value="kg">Kg</option>
-                                            <option value="litre">Litre</option>
-                                            <option value="bottle">Bottle</option>
-                                            <option value="piece">Piece</option>
-                                            <option value="jar">Jar</option>
-                                            <option value="tube">Tube</option>
-                                            <option value="can">Can</option>
-                                            <option value="packet">Packet</option>
-                                            <option value="cup">Cup</option>
-                                        </select>
-                                    </div>
-                                </div>
+                                        <div className="row mb-3">
+                                            <div className="col-4">
+                                                <label className="form-label fw-semibold">{langCtx.getText('price')} (₹)</label>
+                                                <input
+                                                    type="number"
+                                                    className={`form-control ${errors.price ? 'is-invalid' : ''}`}
+                                                    value={price}
+                                                    onChange={this.handleChange('price')}
+                                                    min="0"
+                                                    step="0.01"
+                                                    placeholder={langCtx.getText('enterPrice')}
+                                                />
+                                                {errors.price && <div className="invalid-feedback">{errors.price}</div>}
+                                            </div>
+                                            <div className="col-4">
+                                                <label className="form-label fw-semibold">{langCtx.getText('stock')}</label>
+                                                <input
+                                                    type="number"
+                                                    className={`form-control ${errors.stock ? 'is-invalid' : ''}`}
+                                                    value={stock}
+                                                    onChange={this.handleChange('stock')}
+                                                    min="0"
+                                                    placeholder={langCtx.getText('enterStockQuantity')}
+                                                />
+                                                {errors.stock && <div className="invalid-feedback">{errors.stock}</div>}
+                                            </div>
+                                            <div className="col-4">
+                                                <label className="form-label fw-semibold">Unit</label>
+                                                <select
+                                                    className="form-select"
+                                                    value={unit}
+                                                    onChange={this.handleChange('unit')}
+                                                >
+                                                    <option value="pack">Pack</option>
+                                                    <option value="kg">Kg</option>
+                                                    <option value="litre">Litre</option>
+                                                    <option value="bottle">Bottle</option>
+                                                    <option value="piece">Piece</option>
+                                                    <option value="jar">Jar</option>
+                                                    <option value="tube">Tube</option>
+                                                    <option value="can">Can</option>
+                                                    <option value="packet">Packet</option>
+                                                    <option value="cup">Cup</option>
+                                                </select>
+                                            </div>
+                                        </div>
 
-                                <div className="d-flex gap-2">
-                                    <PrimaryButton type="submit" disabled={loading}>
-                                        {loading ? (
-                                            <>
-                                                <span className="spinner-border spinner-border-sm me-2" />
-                                                Adding...
-                                            </>
-                                        ) : (
-                                            '➕ Add Product'
-                                        )}
-                                    </PrimaryButton>
-                                    <SecondaryButton
-                                        type="button"
-                                        onClick={() =>
-                                            this.setState({
-                                                name: '',
-                                                price: '',
-                                                stock: '',
-                                                unit: 'pack',
-                                                emoji: '📦',
-                                                errors: {},
-                                            })
-                                        }
-                                    >
-                                        Clear
-                                    </SecondaryButton>
-                                </div>
-                            </form>
-                        </FormWrapper>
+                                        <div className="d-flex gap-2">
+                                            <PrimaryButton type="submit" disabled={loading}>
+                                                {loading ? (
+                                                    <>
+                                                        <span className="spinner-border spinner-border-sm me-2" />
+                                                        {langCtx.getText('addingProduct')}
+                                                    </>
+                                                ) : (
+                                                    `➕ ${langCtx.getText('addProduct')}`
+                                                )}
+                                            </PrimaryButton>
+                                            <SecondaryButton
+                                                type="button"
+                                                onClick={() =>
+                                                    this.setState({
+                                                        name: '',
+                                                        price: '',
+                                                        stock: '',
+                                                        unit: 'pack',
+                                                        emoji: '📦',
+                                                        errors: {},
+                                                    })
+                                                }
+                                            >
+                                                {langCtx.getText('reset')}
+                                            </SecondaryButton>
+                                        </div>
+                                    </form>
+                                </FormWrapper>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
+                )}
+            </LanguageContext.Consumer>
         );
     }
 }

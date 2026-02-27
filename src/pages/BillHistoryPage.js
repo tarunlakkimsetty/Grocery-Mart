@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
+import LanguageContext from '../context/LanguageContext';
 import billService from '../services/billService';
 import Spinner from '../components/Spinner';
 import { toast } from 'react-toastify';
@@ -67,86 +68,90 @@ class BillHistoryPage extends React.Component {
         const visibleBills = bills.slice(startIdx, startIdx + ITEMS_PER_PAGE);
 
         return (
-            <div>
-                <PageHeader>
-                    <h1>📋 Purchase History</h1>
-                    <p>{bills.length} total transactions</p>
-                </PageHeader>
+            <LanguageContext.Consumer>
+                {(langCtx) => (
+                    <div>
+                        <PageHeader>
+                            <h1>📋 {langCtx.getText('purchaseHistory')}</h1>
+                            <p>{bills.length} {langCtx.getText('items')} total transactions</p>
+                        </PageHeader>
 
-                {loading && <Spinner fullPage text="Loading history..." />}
-                {error && <div className="alert alert-danger">{error}</div>}
+                        {loading && <Spinner fullPage text="Loading history..." />}
+                        {error && <div className="alert alert-danger">{error}</div>}
 
-                {!loading && !error && bills.length === 0 && (
-                    <EmptyState>
-                        <div className="empty-icon">🧾</div>
-                        <h3>No Purchase History</h3>
-                        <p>Your past purchases will appear here.</p>
-                    </EmptyState>
-                )}
-
-                {!loading && !error && bills.length > 0 && (
-                    <TableWrapper $clickable>
-                        <table className="table">
-                            <thead>
-                                <tr>
-                                    <th>Bill No</th>
-                                    <th>Date</th>
-                                    <th>Items</th>
-                                    <th>Payment</th>
-                                    <th className="text-end">Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {visibleBills.map((bill) => (
-                                    <tr
-                                        key={bill.id}
-                                        onClick={() => this.setState({ redirectTo: `/bill/${bill.id}` })}
-                                        style={{ cursor: 'pointer' }}
-                                    >
-                                        <td className="fw-bold">#{bill.id}</td>
-                                        <td>{this.formatDate(bill.date)}</td>
-                                        <td>{bill.items.length} item(s)</td>
-                                        <td>
-                                            <Badge className={this.getPaymentBadge(bill.paymentMethod)}>
-                                                {bill.paymentMethod}
-                                            </Badge>
-                                        </td>
-                                        <td className="text-end fw-bold" style={{ color: '#2E7D32' }}>
-                                            ₹{bill.grandTotal.toFixed(2)}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-
-                        {totalPages > 1 && (
-                            <PaginationWrapper>
-                                <button
-                                    disabled={currentPage === 1}
-                                    onClick={() => this.setState({ currentPage: currentPage - 1 })}
-                                >
-                                    ‹ Prev
-                                </button>
-                                {Array.from({ length: totalPages }, (_, i) => (
-                                    <button
-                                        key={i + 1}
-                                        className={currentPage === i + 1 ? 'active' : ''}
-                                        onClick={() => this.setState({ currentPage: i + 1 })}
-                                    >
-                                        {i + 1}
-                                    </button>
-                                ))}
-                                <button
-                                    disabled={currentPage === totalPages}
-                                    onClick={() => this.setState({ currentPage: currentPage + 1 })}
-                                >
-                                    Next ›
-                                </button>
-                            </PaginationWrapper>
+                        {!loading && !error && bills.length === 0 && (
+                            <EmptyState>
+                                <div className="empty-icon">🧾</div>
+                                <h3>{langCtx.getText('noBills')}</h3>
+                                <p>{langCtx.getText('noBillsMessage')}</p>
+                            </EmptyState>
                         )}
-                    </TableWrapper>
+
+                        {!loading && !error && bills.length > 0 && (
+                            <TableWrapper $clickable>
+                                <table className="table">
+                                    <thead>
+                                        <tr>
+                                            <th>{langCtx.getText('billNumber')}</th>
+                                            <th>{langCtx.getText('billDate')}</th>
+                                            <th>{langCtx.getText('items')}</th>
+                                            <th>{langCtx.getText('paymentMethod')}</th>
+                                            <th className="text-end">{langCtx.getText('total')}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {visibleBills.map((bill) => (
+                                            <tr
+                                                key={bill.id}
+                                                onClick={() => this.setState({ redirectTo: `/bill/${bill.id}` })}
+                                                style={{ cursor: 'pointer' }}
+                                            >
+                                                <td className="fw-bold">#{bill.id}</td>
+                                                <td>{this.formatDate(bill.date)}</td>
+                                                <td>{bill.items.length} {langCtx.getText('items')}</td>
+                                                <td>
+                                                    <Badge className={this.getPaymentBadge(bill.paymentMethod)}>
+                                                        {bill.paymentMethod}
+                                                    </Badge>
+                                                </td>
+                                                <td className="text-end fw-bold" style={{ color: '#2E7D32' }}>
+                                                    ₹{bill.grandTotal.toFixed(2)}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+
+                                {totalPages > 1 && (
+                                    <PaginationWrapper>
+                                        <button
+                                            disabled={currentPage === 1}
+                                            onClick={() => this.setState({ currentPage: currentPage - 1 })}
+                                        >
+                                            ‹ {langCtx.getText('back')}
+                                        </button>
+                                        {Array.from({ length: totalPages }, (_, i) => (
+                                            <button
+                                                key={i + 1}
+                                                className={currentPage === i + 1 ? 'active' : ''}
+                                                onClick={() => this.setState({ currentPage: i + 1 })}
+                                            >
+                                                {i + 1}
+                                            </button>
+                                        ))}
+                                        <button
+                                            disabled={currentPage === totalPages}
+                                            onClick={() => this.setState({ currentPage: currentPage + 1 })}
+                                        >
+                                            {langCtx.getText('close')} ›
+                                        </button>
+                                    </PaginationWrapper>
+                                )}
+                            </TableWrapper>
+                        )}
+                    </div>
                 )}
-            </div>
+            </LanguageContext.Consumer>
         );
     }
 }

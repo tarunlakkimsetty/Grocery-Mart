@@ -8,6 +8,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import theme from './styledComponents/theme';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
+import { LanguageProvider } from './context/LanguageContext';
 import AuthContext from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
@@ -85,11 +86,13 @@ class App extends React.Component {
     return (
       <ThemeProvider theme={theme}>
         <BrowserRouter>
-          <AuthProvider>
-            <CartProvider>
-              <AppContent />
-            </CartProvider>
-          </AuthProvider>
+          <LanguageProvider>
+            <AuthProvider>
+              <CartProvider>
+                <AppContent />
+              </CartProvider>
+            </AuthProvider>
+          </LanguageProvider>
         </BrowserRouter>
       </ThemeProvider>
     );

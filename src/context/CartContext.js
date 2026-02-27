@@ -8,6 +8,8 @@ const CartContext = React.createContext({
     clearCart: () => { },
     getTotal: () => 0,
     getItemCount: () => 0,
+    toggleItemDelivered: () => { },
+    getDeliveredTotal: () => 0,
 });
 
 class CartProvider extends React.Component {
@@ -22,6 +24,10 @@ class CartProvider extends React.Component {
         this.clearCart = this.clearCart.bind(this);
         this.getTotal = this.getTotal.bind(this);
         this.getItemCount = this.getItemCount.bind(this);
+        this.toggleItemDelivered = this.toggleItemDelivered.bind(this);
+        this.getDeliveredTotal = this.getDeliveredTotal.bind(this);
+        this.toggleItemSelected = this.toggleItemSelected.bind(this);
+        this.getSelectedTotal = this.getSelectedTotal.bind(this);
     }
 
     addToCart(product, quantity) {
@@ -49,6 +55,9 @@ class CartProvider extends React.Component {
                         quantity: qty,
                         total: product.price * qty,
                         emoji: product.emoji || '📦',
+                        delivered: false, // Default: not yet delivered
+                        selected: false, // Default: not selected
+                        stock: product.stock || 0, // Product stock quantity
                     },
                 ],
             };
@@ -76,6 +85,16 @@ class CartProvider extends React.Component {
         }));
     }
 
+    toggleItemDelivered(productId) {
+        this.setState((prevState) => ({
+            items: prevState.items.map((item) =>
+                item.productId === productId
+                    ? { ...item, delivered: !item.delivered }
+                    : item
+            ),
+        }));
+    }
+
     clearCart() {
         this.setState({ items: [] });
     }
@@ -88,6 +107,29 @@ class CartProvider extends React.Component {
         return this.state.items.reduce((sum, item) => sum + item.quantity, 0);
     }
 
+    // Get total for only delivered items
+    getDeliveredTotal() {
+        return this.state.items
+            .filter((item) => item.delivered)
+            .reduce((sum, item) => sum + item.total, 0);
+    }
+
+    toggleItemSelected(productId) {
+        this.setState((prevState) => ({
+            items: prevState.items.map((item) =>
+                item.productId === productId
+                    ? { ...item, selected: !item.selected }
+                    : item
+            ),
+        }));
+    }
+
+    getSelectedTotal() {
+        return this.state.items
+            .filter((item) => item.selected)
+            .reduce((sum, item) => sum + item.total, 0);
+    }
+
     render() {
         const value = {
             items: this.state.items,
@@ -97,6 +139,10 @@ class CartProvider extends React.Component {
             clearCart: this.clearCart,
             getTotal: this.getTotal,
             getItemCount: this.getItemCount,
+            toggleItemDelivered: this.toggleItemDelivered,
+            getDeliveredTotal: this.getDeliveredTotal,
+            toggleItemSelected: this.toggleItemSelected,
+            getSelectedTotal: this.getSelectedTotal,
         };
 
         return (
