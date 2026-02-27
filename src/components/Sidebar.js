@@ -72,7 +72,10 @@ class Sidebar extends React.Component {
                             <SidebarSection>
                                 <SidebarLabel>{langCtx.getText('home')}</SidebarLabel>
                                 <Link to="/products" style={{ textDecoration: 'none' }}>
-                                    <SidebarItem>
+                                    <SidebarItem
+                                        $active={activeCategory === 'ALL'}
+                                        onClick={() => onSelectCategory('ALL')}
+                                    >
                                         <span className="item-icon">🏠</span>
                                         <span className="item-label">{langCtx.getText('allProducts')}</span>
                                     </SidebarItem>

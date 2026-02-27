@@ -61,6 +61,10 @@ export const CardBody = styled.div`
     font-size: 1rem;
     color: ${({ theme }) => theme.colors.textPrimary};
     margin-bottom: 0.25rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    line-height: 1.4;
   }
 
   .card-category {
@@ -69,6 +73,9 @@ export const CardBody = styled.div`
     margin-bottom: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
   }
 
   .card-price {
@@ -81,6 +88,8 @@ export const CardBody = styled.div`
       font-size: 0.8rem;
       font-weight: 400;
       color: ${({ theme }) => theme.colors.textSecondary};
+      word-wrap: break-word;
+      overflow-wrap: break-word;
     }
   }
 
@@ -88,6 +97,8 @@ export const CardBody = styled.div`
     font-size: ${({ theme }) => theme.fontSizes.xs};
     color: ${({ theme }) => theme.colors.textSecondary};
     margin-bottom: 0.75rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 `;
 
@@ -97,6 +108,20 @@ export const CardActions = styled.div`
   gap: 0.5rem;
   align-items: center;
   flex-wrap: wrap;
+  width: 100%;
+  min-height: 45px;
+
+  button {
+    flex: 1;
+    min-width: 80px;
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    line-height: 1.3;
+    padding: 0.55rem 0.75rem !important;
+    font-size: 0.8rem !important;
+  }
 
   .qty-input {
     width: 70px;
@@ -111,6 +136,17 @@ export const CardActions = styled.div`
     &:focus {
       border-color: ${({ theme }) => theme.colors.primaryLight};
       box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 0 0.75rem 0.75rem;
+    gap: 0.4rem;
+
+    button {
+      font-size: 0.75rem !important;
+      padding: 0.45rem 0.5rem !important;
+      min-width: 70px;
     }
   }
 `;

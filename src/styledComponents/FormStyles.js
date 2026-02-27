@@ -16,6 +16,30 @@ export const FormWrapper = styled.div`
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    line-height: 1.5;
+  }
+
+  .form-label {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    line-height: 1.5;
+  }
+
+  .form-control, .form-select {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  @media (max-width: 768px) {
+    padding: 1.25rem;
+
+    .form-title {
+      font-size: 1.1rem;
+    }
   }
 `;
 
@@ -24,10 +48,13 @@ export const TableWrapper = styled.div`
   border-radius: ${({ theme }) => theme.borderRadius.md};
   box-shadow: ${({ theme }) => theme.shadows.sm};
   border: 1px solid ${({ theme }) => theme.colors.borderLight};
-  overflow: hidden;
+  overflow-x: auto;
+  width: 100%;
 
   .table {
     margin: 0;
+    width: 100%;
+    table-layout: auto;
 
     thead th {
       background: ${({ theme }) => theme.colors.bodyBg};
@@ -37,7 +64,16 @@ export const TableWrapper = styled.div`
       color: ${({ theme }) => theme.colors.textSecondary};
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      padding: 0.85rem 1rem;
+      padding: 1rem 0.85rem;
+      line-height: 1.4;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      white-space: normal;
+
+      @media (max-width: 768px) {
+        padding: 0.75rem 0.6rem;
+        font-size: ${({ theme }) => theme.fontSizes.xs};
+      }
     }
 
     tbody tr {
@@ -49,10 +85,18 @@ export const TableWrapper = styled.div`
       }
 
       td {
-        padding: 0.85rem 1rem;
+        padding: 1rem 0.85rem;
         vertical-align: middle;
         border-color: ${({ theme }) => theme.colors.borderLight};
         font-size: ${({ theme }) => theme.fontSizes.sm};
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        white-space: normal;
+
+        @media (max-width: 768px) {
+          padding: 0.75rem 0.6rem;
+          font-size: ${({ theme }) => theme.fontSizes.xs};
+        }
       }
     }
   }

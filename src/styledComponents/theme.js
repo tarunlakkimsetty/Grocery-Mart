@@ -85,7 +85,7 @@ const theme = {
         collapsedWidth: '0px',
     },
     navbar: {
-        height: '64px',
+        height: '88px',
     },
 };
 

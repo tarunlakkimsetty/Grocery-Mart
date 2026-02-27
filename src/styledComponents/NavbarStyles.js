@@ -10,7 +10,7 @@ export const NavbarWrapper = styled.nav`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 1.5rem;
+  padding: 0;
   z-index: 1030;
   box-shadow: ${({ theme }) => theme.shadows.md};
   transition: ${({ theme }) => theme.transitions.normal};
@@ -21,6 +21,8 @@ export const NavBrand = styled.div`
   align-items: center;
   gap: 0.75rem;
   cursor: pointer;
+  flex-shrink: 1;
+  min-width: 0;
 
   .logo-icon {
     width: 36px;
@@ -33,6 +35,7 @@ export const NavBrand = styled.div`
     font-size: 1.25rem;
     color: ${({ theme }) => theme.colors.white};
     box-shadow: ${({ theme }) => theme.shadows.glow};
+    flex-shrink: 0;
   }
 
   .brand-text {
@@ -41,21 +44,25 @@ export const NavBrand = styled.div`
     font-weight: 700;
     color: ${({ theme }) => theme.colors.white};
     letter-spacing: -0.5px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    line-height: 1.3;
+    max-width: 400px;
     
     span {
       color: ${({ theme }) => theme.colors.secondaryLight};
     }
-  }
-`;
 
-export const NavCenter = styled.div`
-  display: flex;
-  align-items: center;
-  flex: 1;
-  justify-content: center;
+    @media (max-width: 768px) {
+      font-size: ${({ theme }) => theme.fontSizes.lg};
+      max-width: 250px;
+    }
 
-  @media (max-width: ${({ theme }) => theme.breakpoints.md}) {
-    display: none;
+    @media (max-width: 576px) {
+      font-size: ${({ theme }) => theme.fontSizes.md};
+      max-width: 150px;
+    }
   }
 `;
 
@@ -87,10 +94,11 @@ export const UserInfo = styled.div`
     font-size: 0.875rem;
   }
 
-  .user-details {
+  .user-meta {
     display: flex;
     flex-direction: column;
     line-height: 1.2;
+    align-items: flex-end;
     
     .user-name {
       color: ${({ theme }) => theme.colors.white};
@@ -98,18 +106,10 @@ export const UserInfo = styled.div`
       font-weight: 600;
     }
 
-    .user-role {
+    .user-phone {
       font-size: ${({ theme }) => theme.fontSizes.xs};
-      color: ${({ theme }) => theme.colors.secondaryLight};
+      color: rgba(255, 255, 255, 0.7);
       font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-  }
-
-  @media (max-width: ${({ theme }) => theme.breakpoints.sm}) {
-    .user-details {
-      display: none;
     }
   }
 `;
@@ -127,6 +127,9 @@ export const LogoutButton = styled.button`
   font-weight: 600;
   cursor: pointer;
   transition: ${({ theme }) => theme.transitions.fast};
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 
   &:hover {
     background: ${({ theme }) => theme.colors.danger};

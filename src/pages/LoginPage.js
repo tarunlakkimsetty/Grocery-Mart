@@ -5,69 +5,8 @@ import LanguageContext from '../context/LanguageContext';
 import { toast } from 'react-toastify';
 import {
     AuthContainer,
-    AuthCard,
-    StyledInput,
+    
 } from '../styledComponents/LayoutStyles';
-import { SubmitButton } from '../styledComponents/ButtonStyles';
-import styled from 'styled-components';
-
-const AuthWrapper = styled.div`
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2rem;
-    width: 100%;
-
-    @media (max-width: 992px) {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
-`;
-
-const ShopInfoCard = styled.div`
-    background: linear-gradient(135deg, #2E7D32 0%, #1b5e20 100%);
-    color: white;
-    padding: 2rem;
-    border-radius: 12px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-
-    h2 {
-        font-size: 1.8rem;
-        font-weight: 700;
-        margin-bottom: 1.5rem;
-        font-family: 'Outfit', sans-serif;
-    }
-
-    .info-section {
-        margin-bottom: 1.5rem;
-
-        .info-label {
-            color: #ffd700;
-            font-weight: 600;
-            font-size: 0.9rem;
-            margin-bottom: 0.3rem;
-            display: block;
-        }
-
-        .info-value {
-            color: #fff;
-            font-size: 1rem;
-            line-height: 1.5;
-        }
-    }
-
-    .welcome-text {
-        font-size: 0.95rem;
-        opacity: 0.95;
-        margin-bottom: 1.5rem;
-        line-height: 1.6;
-    }
-
-    @media (max-width: 992px) {
-        margin-bottom: 1rem;
-    }
-`;
 
 class LoginPage extends React.Component {
     static contextType = AuthContext;
@@ -135,100 +74,113 @@ class LoginPage extends React.Component {
                     this.languageContext = langCtx;
                     return (
                         <AuthContainer>
-                            <AuthWrapper>
-                                <ShopInfoCard>
-                                    <div className="welcome-text">
-                                        {langCtx.getText('welcomeBack')}
-                                    </div>
-                                    <h2>{langCtx.getText('shopName')}</h2>
+                            <div className="container-fluid">
+                                <div className="row min-vh-100 align-items-center">
+                                    <div className="col-12 col-lg-6 p-4 p-lg-5 d-flex justify-content-center justify-content-lg-start">
+                                        <div className="text-white" style={{ maxWidth: '500px', lineHeight: 1.8 }}>
+                                            <div className="mb-3 opacity-75">{langCtx.getText('welcomeBack')}</div>
+                                            <h2 className="fw-bold mb-4">{langCtx.getText('shopName')}</h2>
 
-                                    <div className="info-section">
-                                        <span className="info-label">{langCtx.getText('ownerLabel')}</span>
-                                        <span className="info-value">{langCtx.getText('ownerName')}</span>
-                                    </div>
+                                            <div className="mb-3">
+                                                <div className="fw-semibold">{langCtx.getText('ownerLabel')}</div>
+                                                <div className="opacity-75">{langCtx.getText('ownerName')}</div>
+                                            </div>
 
-                                    <div className="info-section">
-                                        <span className="info-label">{langCtx.getText('addressLabel')}</span>
-                                        <span className="info-value">
-                                            {langCtx.getText('address').split('\n').map((line, idx) => (
-                                                <React.Fragment key={idx}>
-                                                    {line}
-                                                    {idx < langCtx.getText('address').split('\n').length - 1 && <br />}
-                                                </React.Fragment>
-                                            ))}
-                                        </span>
-                                    </div>
+                                            <div className="mb-3">
+                                                <div className="fw-semibold">{langCtx.getText('addressLabel')}</div>
+                                                <div className="opacity-75">{langCtx.getText('address').split('\n').join(', ')}</div>
+                                            </div>
 
-                                    <div className="info-section">
-                                        <span className="info-label">{langCtx.getText('phoneLabel')}</span>
-                                        <span className="info-value">
-                                            <a href="tel:+919441754505" style={{ color: '#ffd700', textDecoration: 'none' }}>
-                                                {langCtx.getText('phoneLink')}
-                                            </a>
-                                        </span>
-                                    </div>
-                                </ShopInfoCard>
-
-                                <AuthCard>
-                                    <div className="auth-header">
-                                        <div className="auth-logo">🛒</div>
-                                        <h2>{langCtx.getText('signIn')}</h2>
-                                        <p style={{marginBottom: 0}}>{langCtx.getText('signInTo')}</p>
-                                    </div>
-
-                                    {errors.general && (
-                                        <div className="alert alert-danger py-2" style={{ fontSize: '0.85rem', borderRadius: '8px' }}>
-                                            {errors.general}
+                                            <div className="mb-3">
+                                                <div className="fw-semibold">{langCtx.getText('phoneLabel')}</div>
+                                                <div>
+                                                    <a href="tel:+919441754505" className="text-warning text-decoration-none">
+                                                        {langCtx.getText('phoneLink')}
+                                                    </a>
+                                                </div>
+                                            </div>
                                         </div>
-                                    )}
-
-                                    <form onSubmit={this.handleSubmit}>
-                                        <StyledInput>
-                                            <label>{langCtx.getText('emailAddress')}</label>
-                                            <input
-                                                type="email"
-                                                placeholder="you@example.com"
-                                                value={email}
-                                                onChange={this.handleChange('email')}
-                                            />
-                                            {errors.email && <div className="error-text">⚠ {errors.email}</div>}
-                                        </StyledInput>
-
-                                        <StyledInput>
-                                            <label>{langCtx.getText('password')}</label>
-                                            <input
-                                                type="password"
-                                                placeholder={langCtx.getText('password')}
-                                                value={password}
-                                                onChange={this.handleChange('password')}
-                                            />
-                                            {errors.password && <div className="error-text">⚠ {errors.password}</div>}
-                                        </StyledInput>
-
-                                        <SubmitButton type="submit" disabled={loading}>
-                                            {loading ? (
-                                                <>
-                                                    <span className="spinner-border spinner-border-sm me-2" role="status" />
-                                                    {langCtx.getText('signingIn')}
-                                                </>
-                                            ) : (
-                                                langCtx.getText('signIn')
-                                            )}
-                                        </SubmitButton>
-                                    </form>
-
-                                    <div className="auth-footer">
-                                        <span>{langCtx.getText('dontHaveAccount')} </span>
-                                        <Link to="/register">{langCtx.getText('createOne')}</Link>
                                     </div>
 
-                                    <div style={{ marginTop: '1.25rem', padding: '0.75rem', background: 'rgba(255,255,255,0.04)', borderRadius: '8px', fontSize: '0.75rem', color: '#adb5bd' }}>
-                                        <strong style={{ color: '#FFB300' }}>{langCtx.getText('demoAccounts')}:</strong><br />
-                                        {langCtx.getText('admin')}: {langCtx.getText('testAdmin')}<br />
-                                        {langCtx.getText('customer')}: {langCtx.getText('testCustomer')}
+                                    <div className="col-12 col-lg-5 offset-lg-1 p-4 p-lg-5 d-flex justify-content-center">
+                                        <div className="w-100" style={{ maxWidth: '420px' }}>
+                                            <div className="card shadow-lg border-0 rounded-4">
+                                                <div className="card-body p-4 p-lg-5">
+                                                    <div className="text-center mb-4">
+                                                        <div className="d-inline-flex align-items-center justify-content-center bg-success text-white rounded-3 mb-2" style={{ width: '56px', height: '56px', fontSize: '1.75rem' }}>
+                                                            🛒
+                                                        </div>
+                                                        <h2 className="h4 fw-bold mb-1">{langCtx.getText('signIn')}</h2>
+                                                        <p className="text-muted mb-0">{langCtx.getText('signInTo')}</p>
+                                                    </div>
+
+                                                    {errors.general && (
+                                                        <div className="alert alert-danger py-2" style={{ fontSize: '0.85rem' }}>
+                                                            {errors.general}
+                                                        </div>
+                                                    )}
+
+                                                    <form onSubmit={this.handleSubmit}>
+                                                        <div className="mb-3">
+                                                            <label className="form-label fw-semibold">{langCtx.getText('emailAddress')}</label>
+                                                            <input
+                                                                type="email"
+                                                                className="form-control rounded-3"
+                                                                placeholder="you@example.com"
+                                                                value={email}
+                                                                onChange={this.handleChange('email')}
+                                                            />
+                                                            {errors.email && (
+                                                                <div className="text-danger mt-1" style={{ fontSize: '0.85rem' }}>
+                                                                    ⚠ {errors.email}
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        <div className="mb-3">
+                                                            <label className="form-label fw-semibold">{langCtx.getText('password')}</label>
+                                                            <input
+                                                                type="password"
+                                                                className="form-control rounded-3"
+                                                                placeholder={langCtx.getText('password')}
+                                                                value={password}
+                                                                onChange={this.handleChange('password')}
+                                                            />
+                                                            {errors.password && (
+                                                                <div className="text-danger mt-1" style={{ fontSize: '0.85rem' }}>
+                                                                    ⚠ {errors.password}
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        <button type="submit" className="btn btn-success w-100 py-2" disabled={loading}>
+                                                            {loading ? (
+                                                                <>
+                                                                    <span className="spinner-border spinner-border-sm me-2" role="status" />
+                                                                    {langCtx.getText('signingIn')}
+                                                                </>
+                                                            ) : (
+                                                                langCtx.getText('signIn')
+                                                            )}
+                                                        </button>
+                                                    </form>
+
+                                                    <div className="mt-3 text-center">
+                                                        <span className="text-muted">{langCtx.getText('dontHaveAccount')} </span>
+                                                        <Link to="/register">{langCtx.getText('createOne')}</Link>
+                                                    </div>
+
+                                                    <div className="mt-4 p-3 rounded-3 bg-dark bg-opacity-25" style={{ fontSize: '0.8rem' }}>
+                                                        <strong className="text-warning">{langCtx.getText('demoAccounts')}:</strong><br />
+                                                        {langCtx.getText('admin')}: {langCtx.getText('testAdmin')}<br />
+                                                        {langCtx.getText('customer')}: {langCtx.getText('testCustomer')}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                </AuthCard>
-                            </AuthWrapper>
+                                </div>
+                            </div>
                         </AuthContainer>
                     );
                 }}

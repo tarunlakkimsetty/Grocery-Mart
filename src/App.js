@@ -22,7 +22,7 @@ class AppContent extends React.Component {
     super(props);
     this.state = {
       sidebarOpen: false,
-      activeCategory: null,
+      activeCategory: 'ALL',
     };
   }
 

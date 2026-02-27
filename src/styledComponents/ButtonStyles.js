@@ -12,7 +12,13 @@ const baseButton = css`
   cursor: pointer;
   transition: ${({ theme }) => theme.transitions.fast};
   border: none;
-  white-space: nowrap;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  line-height: 1.3;
+  text-align: center;
+  min-height: 36px;
 
   &:disabled {
     opacity: 0.6;

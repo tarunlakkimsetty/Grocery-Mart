@@ -29,22 +29,23 @@ class CartItem extends React.Component {
         const isDecreaseDisabled = item.quantity <= 1;
 
         return (
-            <tr>
-                <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <span style={{ fontSize: '1.5rem' }}>{item.emoji}</span>
-                        <span className="fw-semibold">{item.name}</span>
+            <React.Fragment>
+                <td className="text-start" style={{ verticalAlign: 'middle', paddingRight: '0.75rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '0' }}>
+                        <span style={{ fontSize: '1.2rem', flexShrink: 0 }}>{item.emoji}</span>
+                        <span className="fw-semibold" style={{ whiteSpace: 'normal', wordWrap: 'break-word', overflowWrap: 'break-word', minWidth: '0', flex: 1 }}>{item.name}</span>
                     </div>
                 </td>
-                <td className="text-center">₹{item.price.toFixed(2)}</td>
-                <td className="text-center">
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                <td className="text-center" style={{ width: '120px', verticalAlign: 'middle' }}>₹{item.price.toFixed(2)}</td>
+                <td className="text-center" style={{ width: '170px', verticalAlign: 'middle' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem' }}>
                         <GhostButton
                             onClick={handleDecrease}
                             disabled={isDecreaseDisabled}
                             style={{
-                                padding: '0.2rem 0.5rem',
-                                minWidth: '30px',
+                                padding: '0.2rem 0.4rem',
+                                minWidth: '28px',
+                                fontSize: '0.75rem',
                                 opacity: isDecreaseDisabled ? 0.5 : 1,
                                 cursor: isDecreaseDisabled ? 'not-allowed' : 'pointer'
                             }}
@@ -52,15 +53,16 @@ class CartItem extends React.Component {
                         >
                             −
                         </GhostButton>
-                        <span className="fw-bold" style={{ minWidth: '30px', textAlign: 'center' }}>
+                        <span className="fw-bold" style={{ minWidth: '25px', textAlign: 'center', fontSize: '0.9rem' }}>
                             {item.quantity}
                         </span>
                         <GhostButton
                             onClick={handleIncrease}
                             disabled={isIncreaseDisabled}
                             style={{
-                                padding: '0.2rem 0.5rem',
-                                minWidth: '30px',
+                                padding: '0.2rem 0.4rem',
+                                minWidth: '28px',
+                                fontSize: '0.75rem',
                                 opacity: isIncreaseDisabled ? 0.5 : 1,
                                 cursor: isIncreaseDisabled ? 'not-allowed' : 'pointer'
                             }}
@@ -70,22 +72,22 @@ class CartItem extends React.Component {
                         </GhostButton>
                     </div>
                     {isIncreaseDisabled && (
-                        <div style={{ fontSize: '0.75rem', color: '#E53935', marginTop: '0.25rem' }}>
+                        <div style={{ fontSize: '0.7rem', color: '#dc3545', marginTop: '0.2rem' }}>
                             Max: {item.stock}
                         </div>
                     )}
                 </td>
-                <td className="text-end fw-bold" style={{ color: '#2E7D32' }}>₹{item.total.toFixed(2)}</td>
-                <td className="text-center">
+                <td className="fw-bold text-center text-success" style={{ width: '130px', verticalAlign: 'middle' }}>₹{item.total.toFixed(2)}</td>
+                <td className="text-center" style={{ width: '90px', verticalAlign: 'middle' }}>
                     <DangerButton
                         onClick={() => onRemove(item.productId)}
-                        style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }}
+                        style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', minWidth: 'auto' }}
                         title={langCtx.getText('removeItem')}
                     >
                         ✕
                     </DangerButton>
                 </td>
-            </tr>
+            </React.Fragment>
         );
     }
 }

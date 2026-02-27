@@ -11,17 +11,8 @@ import { PageHeader } from '../styledComponents/LayoutStyles';
 import { TableWrapper, EmptyState } from '../styledComponents/FormStyles';
 import { PrimaryButton, DangerButton } from '../styledComponents/ButtonStyles';
 
-const DeliveryCheckbox = styled.input`
-    cursor: pointer;
-    width: 1.2rem;
-    height: 1.2rem;
-    accent-color: #2E7D32;
-`;
-
 const ItemRow = styled.tr`
-    opacity: ${props => props.delivered ? 0.6 : 1};
-    background-color: ${props => props.delivered ? '#f0f8f0' : 'transparent'};
-    text-decoration: ${props => props.delivered ? 'line-through' : 'none'};
+    opacity: ${props => (props.delivered ? 0.85 : 1)};
 `;
 
 class CartPage extends React.Component {
@@ -143,26 +134,28 @@ class CartPage extends React.Component {
                                                     </div>
 
                                                     <TableWrapper>
-                                                        <table className="table">
+                                                        <table className="table table-striped table-hover align-middle">
                                                             <thead>
                                                                 <tr>
-                                                                    <th style={{ width: '50px', textAlign: 'center' }}>{langCtx.getText('delivered')}</th>
-                                                                    <th>{langCtx.getText('productName')}</th>
-                                                                    <th className="text-center">{langCtx.getText('price')}</th>
-                                                                    <th className="text-center">{langCtx.getText('quantity')}</th>
-                                                                    <th className="text-end">{langCtx.getText('total')}</th>
-                                                                    <th className="text-center">Action</th>
+                                                                    <th className="text-center" style={{ width: '70px', verticalAlign: 'middle' }}>Checkbox</th>
+                                                                    <th className="text-start" style={{ verticalAlign: 'middle' }}>{langCtx.getText('productName')}</th>
+                                                                    <th className="text-center" style={{ width: '120px', verticalAlign: 'middle' }}>{langCtx.getText('price')}</th>
+                                                                    <th className="text-center" style={{ width: '170px', verticalAlign: 'middle' }}>{langCtx.getText('quantity')}</th>
+                                                                    <th className="text-center" style={{ width: '130px', verticalAlign: 'middle' }}>{langCtx.getText('total')}</th>
+                                                                    <th className="text-center" style={{ width: '90px', verticalAlign: 'middle' }}>Action</th>
                                                                 </tr>
                                                             </thead>
                                                             <tbody>
                                                                 {this.state.filteredItems.map((item) => (
                                                                     <ItemRow key={item.productId} delivered={item.delivered}>
-                                                                        <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-                                                                            <DeliveryCheckbox
+                                                                        <td className="text-center" style={{ width: '70px', verticalAlign: 'middle' }}>
+                                                                            <input
                                                                                 type="checkbox"
-                                                                                checked={item.delivered}
+                                                                                className="form-check-input m-0"
+                                                                                style={{ transform: 'scale(1.2)', cursor: 'pointer' }}
+                                                                                checked={!!item.delivered}
                                                                                 onChange={() => cartCtx.toggleItemDelivered(item.productId)}
-                                                                                aria-label={`Mark ${item.name} as delivered`}
+                                                                                aria-label={`Include ${item.name} in billing`}
                                                                             />
                                                                         </td>
                                                                         <CartItem

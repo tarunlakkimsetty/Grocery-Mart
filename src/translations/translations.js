@@ -277,7 +277,7 @@ export const translations = {
 
   te: {
     // Shop Details
-    shopName: 'ఓం శ్రీ శత్య సాయి రామ కిరాణ డిపార్చర పరిణాममండ్రీ',
+    shopName: 'ఓం శ్రీ సత్య సాయి రామ కిరాణా అండ్ జనరల్ మర్చెంట్స్',
     shopNameShort: 'ఓమ్ కిరాణ',
     ownerName: 'ఎల్. నాగేశ్వర రావు (నాగబాబు)',
     ownerLabel: 'యజమాని',

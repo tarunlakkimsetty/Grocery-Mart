@@ -35,8 +35,16 @@ class ProductsPage extends React.Component {
     fetchProducts = async () => {
         this.setState({ loading: true, error: null });
         try {
-            const products = await productService.getProducts(this.props.activeCategory || null);
-            this.setState({ products, filteredProducts: products, loading: false });
+            const { activeCategory } = this.props;
+            const categoryParam = activeCategory && activeCategory !== 'ALL' ? activeCategory : null;
+            const products = await productService.getProducts(categoryParam);
+
+            const searchQuery = (this.state.searchQuery || '').trim();
+            const filteredProducts = searchQuery
+                ? products.filter((product) => product.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                : products;
+
+            this.setState({ products, filteredProducts, loading: false });
         } catch (err) {
             this.setState({ error: 'Failed to load products', loading: false });
             toast.error('Failed to load products');
@@ -92,7 +100,7 @@ class ProductsPage extends React.Component {
             personal: 'personal',
         };
 
-        const title = activeCategory
+        const title = activeCategory && activeCategory !== 'ALL'
             ? getText(categoryKeys[activeCategory] || activeCategory)
             : getText('allProducts');
 

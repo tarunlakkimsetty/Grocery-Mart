@@ -17,6 +17,16 @@ body {
   background: #f0f2f5;
   color: #212529;
   line-height: 1.6;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* Text wrapping for long content */
+h1, h2, h3, h4, h5, h6, p, span, label, button, a, td, th {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 /* Custom scrollbar */

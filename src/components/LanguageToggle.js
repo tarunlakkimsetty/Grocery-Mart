@@ -8,7 +8,7 @@ const ToggleWrapper = styled.div`
     gap: 0.5rem;
     background: rgba(255, 255, 255, 0.1);
     padding: 0.5rem 0.75rem;
-    border-radius: 20px;
+    border-radius: 50px;
     border: 1px solid rgba(255, 255, 255, 0.2);
 
     @media (max-width: 576px) {
@@ -18,14 +18,14 @@ const ToggleWrapper = styled.div`
 `;
 
 const ToggleButton = styled.button`
-    background: none;
+    background: ${props => props.active ? 'rgba(255, 255, 255, 0.14)' : 'transparent'};
     border: none;
     color: ${props => props.active ? '#FFD700' : '#fff'};
     font-weight: ${props => props.active ? '700' : '500'};
     font-size: 0.85rem;
     cursor: pointer;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
+    padding: 0.3rem 0.65rem;
+    border-radius: 50px;
     transition: all 0.3s ease;
 
     &:hover {
