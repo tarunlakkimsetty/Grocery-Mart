@@ -43,6 +43,17 @@ let mockOrders = [
 let orderNextId = 2003;
 
 // ============================================================
+// MOCK OFFLINE ORDERS DATA (created manually by admin)
+// ============================================================
+let mockOfflineOrders = [];
+let offlineOrderNextId = 9001;
+
+const findMockOrderById = (orderId) => {
+    const id = parseInt(orderId);
+    return mockOrders.find((o) => o.id === id) || mockOfflineOrders.find((o) => o.id === id);
+};
+
+// ============================================================
 // Order Service
 // ============================================================
 const orderService = {
@@ -113,7 +124,7 @@ const orderService = {
             const response = await axiosInstance.get('/orders/' + orderId);
             return response.data;
         } catch {
-            const order = mockOrders.find((o) => o.id === parseInt(orderId));
+            const order = findMockOrderById(orderId);
             if (!order) throw new Error('Order not found');
             return order;
         }
@@ -127,7 +138,7 @@ const orderService = {
             const response = await axiosInstance.put('/orders/' + orderId + '/verify', payload);
             return response.data;
         } catch {
-            const order = mockOrders.find((o) => o.id === parseInt(orderId));
+            const order = findMockOrderById(orderId);
             if (order) {
                 order.status = 'Verified';
                 if (payload && payload.items) {
@@ -151,7 +162,7 @@ const orderService = {
             });
             return response.data;
         } catch {
-            const order = mockOrders.find((o) => o.id === parseInt(orderId));
+            const order = findMockOrderById(orderId);
             if (!order) throw new Error('Order not found');
             if (order.status !== 'Pending') throw new Error('Order is locked');
 
@@ -184,7 +195,7 @@ const orderService = {
             });
             return response.data;
         } catch {
-            const order = mockOrders.find((o) => o.id === parseInt(orderId));
+            const order = findMockOrderById(orderId);
             if (!order) throw new Error('Order not found');
             if (order.status !== 'Pending') throw new Error('Order is locked');
 
@@ -200,7 +211,7 @@ const orderService = {
             const response = await axiosInstance.put('/orders/' + orderId + '/approve-payment');
             return response.data;
         } catch {
-            const order = mockOrders.find((o) => o.id === parseInt(orderId));
+            const order = findMockOrderById(orderId);
             if (order) order.paymentStatus = 'Paid';
             return order;
         }
@@ -212,8 +223,70 @@ const orderService = {
             const response = await axiosInstance.put('/orders/' + orderId + '/deliver');
             return response.data;
         } catch {
-            const order = mockOrders.find((o) => o.id === parseInt(orderId));
+            const order = findMockOrderById(orderId);
             if (order) order.status = 'Delivered';
+            return order;
+        }
+    },
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // OFFLINE ORDERS (Admin)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // Create Offline Order
+    // API: POST /api/orders/offline
+    createOfflineOrder: async (payload) => {
+        try {
+            const response = await axiosInstance.post('/orders/offline', payload);
+            return response.data;
+        } catch {
+            const nowIso = new Date().toISOString();
+            const orderDate = payload.orderDate || nowIso;
+            const newOrder = {
+                id: offlineOrderNextId++,
+                customerName: payload.customerName,
+                customerPhone: payload.phone,
+                place: payload.place,
+                address: payload.address || '',
+                items: payload.items || [],
+                grandTotal: payload.totalAmount || 0,
+                paymentType: 'Cash',
+                paymentStatus: payload.status === 'Paid' ? 'Paid' : 'Pending Payment',
+                status: payload.status || 'Pending',
+                orderType: payload.orderType || 'Offline',
+                // Backend should return `orderDate`; keep `date` for compatibility with existing code.
+                orderDate: orderDate,
+                date: orderDate,
+            };
+            mockOfflineOrders.push(newOrder);
+            return newOrder;
+        }
+    },
+
+    // Fetch Offline Orders
+    // API: GET /api/orders/offline
+    getOfflineOrders: async () => {
+        try {
+            const response = await axiosInstance.get('/orders/offline');
+            return response.data;
+        } catch {
+            return [...mockOfflineOrders].sort(
+                (a, b) =>
+                    new Date(b.orderDate || b.date) - new Date(a.orderDate || a.date)
+            );
+        }
+    },
+
+    // Update Offline/Online Order
+    // API: PUT /api/orders/:id
+    updateOrder: async (orderId, data) => {
+        try {
+            const response = await axiosInstance.put('/orders/' + orderId, data);
+            return response.data;
+        } catch {
+            const order = findMockOrderById(orderId);
+            if (!order) throw new Error('Order not found');
+            Object.assign(order, data);
             return order;
         }
     },

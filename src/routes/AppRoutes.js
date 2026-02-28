@@ -12,6 +12,7 @@ import AddProductPage from '../pages/AddProductPage';
 import AdminBillsPage from '../pages/AdminBillsPage';
 import AnalyticsPage from '../pages/AnalyticsPage';
 import AdminOnlineOrdersPage from '../pages/AdminOnlineOrdersPage';
+import AdminOfflineOrdersPage from '../pages/AdminOfflineOrdersPage';
 
 // Wrapper to extract route params for class components
 class BillDetailsWrapper extends React.Component {
@@ -100,6 +101,14 @@ class AppRoutes extends React.Component {
                     element={
                         <RoleBasedRoute allowedRoles={['admin']}>
                             <AdminOnlineOrdersPage />
+                        </RoleBasedRoute>
+                    }
+                />
+                <Route
+                    path="/admin/offline-orders"
+                    element={
+                        <RoleBasedRoute allowedRoles={['admin']}>
+                            <AdminOfflineOrdersPage />
                         </RoleBasedRoute>
                     }
                 />
