@@ -14,7 +14,10 @@ import { TableWrapper, EmptyState } from '../styledComponents/FormStyles';
 import { PrimaryButton, DangerButton } from '../styledComponents/ButtonStyles';
 
 const ItemRow = styled.tr`
-    opacity: ${props => (props.delivered ? 0.85 : 1)};
+    transition: background-color 0.15s ease;
+    ${props => props.$delivered && `
+        background-color: rgba(25, 135, 84, 0.08) !important;
+    `}
 `;
 
 class CartPage extends React.Component {
@@ -27,38 +30,12 @@ class CartPage extends React.Component {
             loading: false,
             redirectTo: null,
             searchQuery: '',
-            filteredItems: [],
         };
         this.languageContext = null;
     }
 
-    componentDidMount() {
-        this.updateFilteredItems();
-    }
-
-    componentDidUpdate(prevProps, prevState) {
-        if (this.context.items !== prevProps && this.state.searchQuery !== prevState.searchQuery) {
-            this.updateFilteredItems();
-        }
-    }
-
-    updateFilteredItems = () => {
-        const { items } = this.context;
-        const { searchQuery } = this.state;
-
-        if (!searchQuery.trim()) {
-            this.setState({ filteredItems: items });
-            return;
-        }
-
-        const filtered = items.filter((item) =>
-            item.name.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-        this.setState({ filteredItems: filtered });
-    };
-
     handleSearch = (searchQuery) => {
-        this.setState({ searchQuery }, this.updateFilteredItems);
+        this.setState({ searchQuery });
     };
 
     // Existing in-store billing flow (Cash / Card / UPI)
@@ -162,7 +139,13 @@ class CartPage extends React.Component {
                         <AuthContext.Consumer>
                             {(authCtx) => (
                                 <CartContext.Consumer>
-                                    {(cartCtx) => (
+                                    {(cartCtx) => {
+                                        const filteredItems = this.state.searchQuery.trim()
+                                            ? cartCtx.items.filter((i) =>
+                                                i.name.toLowerCase().includes(this.state.searchQuery.toLowerCase())
+                                              )
+                                            : cartCtx.items;
+                                        return (
                                         <div>
                                             <PageHeader>
                                                 <h1>🛒 {langCtx.getText('shoppingCart')}</h1>
@@ -193,7 +176,7 @@ class CartPage extends React.Component {
                                                             )}
 
                                                             <TableWrapper>
-                                                                <table className="table table-striped table-hover align-middle">
+                                                                <table className="table table-hover align-middle">
                                                                     <thead>
                                                                         <tr>
                                                                             {!isCOD && (
@@ -207,8 +190,8 @@ class CartPage extends React.Component {
                                                                         </tr>
                                                                     </thead>
                                                                     <tbody>
-                                                                        {this.state.filteredItems.map((item) => (
-                                                                            <ItemRow key={item.productId} delivered={item.delivered}>
+                                                                        {filteredItems.map((item) => (
+                                                                            <ItemRow key={item.productId} $delivered={!!item.delivered}>
                                                                                 {!isCOD && (
                                                                                     <td className="text-center" style={{ width: '70px', verticalAlign: 'middle' }}>
                                                                                         <input
@@ -344,7 +327,8 @@ class CartPage extends React.Component {
                                                 </>
                                             )}
                                         </div>
-                                    )}
+                                        );
+                                    }}
                                 </CartContext.Consumer>
                             )}
                         </AuthContext.Consumer>
