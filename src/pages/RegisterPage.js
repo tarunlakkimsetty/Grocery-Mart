@@ -26,8 +26,10 @@ class RegisterPage extends React.Component {
         this.state = {
             name: '',
             phone: '',
-            email: '',
             password: '',
+            confirmPassword: '',
+            showPassword: false,
+            showConfirmPassword: false,
             place: '',
             errors: {},
             loading: false,
@@ -37,13 +39,18 @@ class RegisterPage extends React.Component {
 
     validate = () => {
         const errors = {};
-        const { name, phone, email, password, place } = this.state;
+        const { name, phone, password, confirmPassword, place } = this.state;
 
         errors.name = validators.validateName(name, this.languageContext.getText);
         errors.phone = validators.validatePhone(phone, this.languageContext.getText);
-        errors.email = validators.validateEmail(email, this.languageContext.getText);
         errors.password = validators.validatePassword(password, this.languageContext.getText);
         errors.place = validators.validatePlace(place, this.languageContext.getText);
+
+        if (!confirmPassword) {
+            errors.confirmPassword = this.languageContext.getText('confirmPasswordRequired');
+        } else if (confirmPassword !== password) {
+            errors.confirmPassword = this.languageContext.getText('passwordsDoNotMatch');
+        }
 
         // Remove empty error properties
         Object.keys(errors).forEach(key => !errors[key] && delete errors[key]);
@@ -58,8 +65,8 @@ class RegisterPage extends React.Component {
 
         this.setState({ loading: true });
         try {
-            const { name, phone, email, password, place } = this.state;
-            await this.context.register({ name, phone, email, password, place });
+            const { name, phone, password, place } = this.state;
+            await this.context.register({ fullName: name, phone, place, password });
             toast.success(this.languageContext.getText('registrationSuccess') + ' 🎉');
         } catch (err) {
             toast.error(err.message || this.languageContext.getText('registrationFailed'));
@@ -82,12 +89,32 @@ class RegisterPage extends React.Component {
         this.setState({ [field]: value });
     };
 
+    togglePassword = () => {
+        this.setState((prev) => ({ showPassword: !prev.showPassword }));
+    };
+
+    toggleConfirmPassword = () => {
+        this.setState((prev) => ({ showConfirmPassword: !prev.showConfirmPassword }));
+    };
+
     render() {
         if (this.context.isAuthenticated) {
             return <Navigate to="/products" replace />;
         }
 
-        const { name, phone, email, password, place, errors, loading } = this.state;
+        const {
+            name,
+            phone,
+            password,
+            confirmPassword,
+            showPassword,
+            showConfirmPassword,
+            place,
+            errors,
+            loading,
+        } = this.state;
+
+        const passwordsMismatch = !!password && !!confirmPassword && password !== confirmPassword;
 
         return (
             <LanguageContext.Consumer>
@@ -192,30 +219,24 @@ class RegisterPage extends React.Component {
                                                         </div>
 
                                                         <div className="mb-3">
-                                                            <label className="form-label fw-semibold">{langCtx.getText('emailAddress')}</label>
-                                                            <input
-                                                                type="email"
-                                                                className="form-control rounded-3"
-                                                                placeholder="you@example.com"
-                                                                value={email}
-                                                                onChange={this.handleChange('email')}
-                                                            />
-                                                            {errors.email && (
-                                                                <div className="text-danger mt-1" style={{ fontSize: '0.85rem' }}>
-                                                                    ⚠ {errors.email}
-                                                                </div>
-                                                            )}
-                                                        </div>
-
-                                                        <div className="mb-3">
                                                             <label className="form-label fw-semibold">{langCtx.getText('password')}</label>
-                                                            <input
-                                                                type="password"
-                                                                className="form-control rounded-3"
-                                                                placeholder="Min 6 characters"
-                                                                value={password}
-                                                                onChange={this.handleChange('password')}
-                                                            />
+                                                            <div className="input-group">
+                                                                <input
+                                                                    type={showPassword ? 'text' : 'password'}
+                                                                    className="form-control rounded-start-3"
+                                                                    placeholder="Min 6 characters"
+                                                                    value={password}
+                                                                    onChange={this.handleChange('password')}
+                                                                />
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-outline-secondary"
+                                                                    onClick={this.togglePassword}
+                                                                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                                                >
+                                                                    👁
+                                                                </button>
+                                                            </div>
                                                             {errors.password && (
                                                                 <div className="text-danger mt-1" style={{ fontSize: '0.85rem' }}>
                                                                     ⚠ {errors.password}
@@ -223,7 +244,38 @@ class RegisterPage extends React.Component {
                                                             )}
                                                         </div>
 
-                                                        <button type="submit" className="btn btn-success w-100 py-2" disabled={loading}>
+                                                        <div className="mb-3">
+                                                            <label className="form-label fw-semibold">{langCtx.getText('confirmPassword')}</label>
+                                                            <div className="input-group">
+                                                                <input
+                                                                    type={showConfirmPassword ? 'text' : 'password'}
+                                                                    className="form-control rounded-start-3"
+                                                                    placeholder={langCtx.getText('confirmPassword')}
+                                                                    value={confirmPassword}
+                                                                    onChange={this.handleChange('confirmPassword')}
+                                                                />
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-outline-secondary"
+                                                                    onClick={this.toggleConfirmPassword}
+                                                                    aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                                                                >
+                                                                    👁
+                                                                </button>
+                                                            </div>
+                                                            {errors.confirmPassword && (
+                                                                <div className="text-danger mt-1" style={{ fontSize: '0.85rem' }}>
+                                                                    ⚠ {errors.confirmPassword}
+                                                                </div>
+                                                            )}
+                                                            {passwordsMismatch && !errors.confirmPassword && (
+                                                                <div className="text-danger mt-1" style={{ fontSize: '0.85rem' }}>
+                                                                    ⚠ {langCtx.getText('passwordsDoNotMatch')}
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        <button type="submit" className="btn btn-success w-100 py-2" disabled={loading || passwordsMismatch}>
                                                             {loading ? (
                                                                 <>
                                                                     <span className="spinner-border spinner-border-sm me-2" role="status" />

@@ -14,8 +14,9 @@ class LoginPage extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            email: '',
+            phone: '',
             password: '',
+            showPassword: false,
             errors: {},
             loading: false,
         };
@@ -23,12 +24,13 @@ class LoginPage extends React.Component {
 
     validate = () => {
         const errors = {};
-        const { email, password } = this.state;
+        const { phone, password } = this.state;
 
-        if (!email.trim()) {
-            errors.email = this.languageContext.getText('emailRequired');
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            errors.email = this.languageContext.getText('emailInvalid');
+        const cleanedPhone = String(phone || '').replace(/\D/g, '');
+        if (!cleanedPhone) {
+            errors.phone = this.languageContext.getText('phoneRequired');
+        } else if (!/^\d{10}$/.test(cleanedPhone)) {
+            errors.phone = this.languageContext.getText('phoneInvalid');
         }
 
         if (!password) {
@@ -47,7 +49,8 @@ class LoginPage extends React.Component {
 
         this.setState({ loading: true });
         try {
-            await this.context.login(this.state.email, this.state.password);
+            const cleanedPhone = String(this.state.phone || '').replace(/\D/g, '');
+            await this.context.login(cleanedPhone, this.state.password);
             toast.success(this.languageContext.getText('loginSuccess') + ' 🎉');
         } catch (err) {
             toast.error(err.message || this.languageContext.getText('loginFailed'));
@@ -58,7 +61,15 @@ class LoginPage extends React.Component {
     };
 
     handleChange = (field) => (e) => {
-        this.setState({ [field]: e.target.value });
+        let value = e.target.value;
+        if (field === 'phone') {
+            value = value.replace(/\D/g, '').slice(0, 10);
+        }
+        this.setState({ [field]: value });
+    };
+
+    togglePassword = () => {
+        this.setState((prev) => ({ showPassword: !prev.showPassword }));
     };
 
     render() {
@@ -66,7 +77,7 @@ class LoginPage extends React.Component {
             return <Navigate to="/products" replace />;
         }
 
-        const { email, password, errors, loading } = this.state;
+        const { phone, password, showPassword, errors, loading } = this.state;
 
         return (
             <LanguageContext.Consumer>
@@ -122,30 +133,41 @@ class LoginPage extends React.Component {
 
                                                     <form onSubmit={this.handleSubmit}>
                                                         <div className="mb-3">
-                                                            <label className="form-label fw-semibold">{langCtx.getText('emailAddress')}</label>
+                                                            <label className="form-label fw-semibold">{langCtx.getText('phone')}</label>
                                                             <input
-                                                                type="email"
+                                                                type="tel"
                                                                 className="form-control rounded-3"
-                                                                placeholder="you@example.com"
-                                                                value={email}
-                                                                onChange={this.handleChange('email')}
+                                                                placeholder="Enter phone number"
+                                                                value={phone}
+                                                                onChange={this.handleChange('phone')}
+                                                                maxLength={10}
                                                             />
-                                                            {errors.email && (
+                                                            {errors.phone && (
                                                                 <div className="text-danger mt-1" style={{ fontSize: '0.85rem' }}>
-                                                                    ⚠ {errors.email}
+                                                                    ⚠ {errors.phone}
                                                                 </div>
                                                             )}
                                                         </div>
 
                                                         <div className="mb-3">
                                                             <label className="form-label fw-semibold">{langCtx.getText('password')}</label>
-                                                            <input
-                                                                type="password"
-                                                                className="form-control rounded-3"
-                                                                placeholder={langCtx.getText('password')}
-                                                                value={password}
-                                                                onChange={this.handleChange('password')}
-                                                            />
+                                                            <div className="input-group">
+                                                                <input
+                                                                    type={showPassword ? 'text' : 'password'}
+                                                                    className="form-control rounded-start-3"
+                                                                    placeholder={langCtx.getText('password')}
+                                                                    value={password}
+                                                                    onChange={this.handleChange('password')}
+                                                                />
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-outline-secondary"
+                                                                    onClick={this.togglePassword}
+                                                                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                                                >
+                                                                    👁
+                                                                </button>
+                                                            </div>
                                                             {errors.password && (
                                                                 <div className="text-danger mt-1" style={{ fontSize: '0.85rem' }}>
                                                                     ⚠ {errors.password}

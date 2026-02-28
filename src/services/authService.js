@@ -12,7 +12,16 @@ let mockUserStore = [...MOCK_USERS];
 let nextId = 3;
 
 function generateMockToken(user) {
-    return btoa(JSON.stringify({ id: user.id, email: user.email, role: user.role, name: user.name }));
+    return btoa(
+        JSON.stringify({
+            id: user.id,
+            role: user.role,
+            name: user.name,
+            phone: user.phone,
+            // keep email for backward compatibility (may be undefined for phone-only users)
+            email: user.email,
+        })
+    );
 }
 
 function decodeMockToken(token) {
@@ -27,15 +36,18 @@ function decodeMockToken(token) {
 // Auth Service
 // ============================================================
 const authService = {
-    login: async (email, password) => {
+    login: async (phone, password) => {
         try {
-            const response = await axiosInstance.post('/auth/login', { email, password });
+            const response = await axiosInstance.post('/auth/login', { phone, password });
             return response.data;
         } catch (err) {
             // Fallback to mock
-            const user = mockUserStore.find((u) => u.email === email && u.password === password);
+            const cleanedPhone = String(phone || '').replace(/\D/g, '');
+            const user = mockUserStore.find(
+                (u) => String(u.phone) === cleanedPhone && u.password === password
+            );
             if (!user) {
-                throw new Error('Invalid email or password');
+                throw new Error('Invalid phone or password');
             }
             const token = generateMockToken(user);
             const { password: _, ...userData } = user;
@@ -49,16 +61,19 @@ const authService = {
             return response.data;
         } catch (err) {
             // Fallback to mock
-            const exists = mockUserStore.find((u) => u.email === data.email);
+            const cleanedPhone = String(data.phone || '').replace(/\D/g, '');
+            const exists = mockUserStore.find((u) => String(u.phone) === cleanedPhone);
             if (exists) {
-                throw new Error('Email already registered');
+                throw new Error('Phone number already registered');
             }
+
+            const fullName = data.fullName || data.name;
             const newUser = {
                 id: nextId++,
-                name: data.name,
-                email: data.email,
+                name: fullName,
+                email: data.email, // optional
                 password: data.password,
-                phone: data.phone,
+                phone: cleanedPhone,
                 role: 'customer',
             };
             mockUserStore.push(newUser);

@@ -43,8 +43,8 @@ class AuthProvider extends React.Component {
         }
     }
 
-    async login(email, password) {
-        const data = await authService.login(email, password);
+    async login(phone, password) {
+        const data = await authService.login(phone, password);
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         this.setState({
