@@ -248,6 +248,10 @@ export const Badge = styled.span`
     background: rgba(156, 39, 176, 0.12);
     color: #7b1fa2;
   }
+  &.badge-primary {
+    background: rgba(13, 110, 253, 0.12);
+    color: #0a58ca;
+  }
 `;
 
 export const EmptyState = styled.div`
