@@ -7,7 +7,14 @@ import orderService from '../services/orderService';
 import Spinner from '../components/Spinner';
 import { toast } from 'react-toastify';
 import { PageHeader } from '../styledComponents/LayoutStyles';
-import { TableWrapper, PaginationWrapper, EmptyState, Badge } from '../styledComponents/FormStyles';
+import {
+    TableWrapper,
+    PaginationWrapper,
+    EmptyState,
+    Badge,
+    ModalOverlay,
+    ModalContent,
+} from '../styledComponents/FormStyles';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -24,6 +31,10 @@ class BillHistoryPage extends React.Component {
             currentPage: 1,
             redirectTo: null,
             activeTab: 'bills',
+            // Customer Order Details Modal
+            orderModalOpen: false,
+            selectedOrder: null,
+            orderModalLoading: false,
         };
     }
 
@@ -38,13 +49,31 @@ class BillHistoryPage extends React.Component {
             const userId = user ? user.id : 2;
             const [bills, orders] = await Promise.all([
                 billService.getBillHistory(userId),
-                orderService.getUserOrders(userId),
+                orderService.getCustomerOrders(userId),
             ]);
             this.setState({ bills, orders, loading: false });
         } catch (err) {
             this.setState({ error: 'Failed to load history', loading: false });
             toast.error('Failed to load history');
         }
+    };
+
+    openOrderModal = async (order) => {
+        const { user } = this.context;
+        const userId = user ? user.id : 2;
+        this.setState({ orderModalOpen: true, selectedOrder: order, orderModalLoading: true });
+        try {
+            // Always re-fetch from customer endpoint to reflect the final verified order
+            const orders = await orderService.getCustomerOrders(userId);
+            const fresh = orders.find((o) => o.id === order.id);
+            this.setState({ selectedOrder: fresh || order, orderModalLoading: false, orders });
+        } catch (err) {
+            this.setState({ orderModalLoading: false });
+        }
+    };
+
+    closeOrderModal = () => {
+        this.setState({ orderModalOpen: false, selectedOrder: null, orderModalLoading: false });
     };
 
     formatDate = (dateStr) => {
@@ -73,7 +102,17 @@ class BillHistoryPage extends React.Component {
             return <Navigate to={this.state.redirectTo} />;
         }
 
-        const { bills, orders, loading, error, currentPage, activeTab } = this.state;
+        const {
+            bills,
+            orders,
+            loading,
+            error,
+            currentPage,
+            activeTab,
+            orderModalOpen,
+            selectedOrder,
+            orderModalLoading,
+        } = this.state;
 
         const activeList = activeTab === 'bills' ? bills : orders;
         const totalPages = Math.ceil(activeList.length / ITEMS_PER_PAGE);
@@ -185,7 +224,11 @@ class BillHistoryPage extends React.Component {
                                             </thead>
                                             <tbody>
                                                 {visibleItems.map((order) => (
-                                                    <tr key={order.id}>
+                                                    <tr
+                                                        key={order.id}
+                                                        onClick={() => this.openOrderModal(order)}
+                                                        style={{ cursor: 'pointer' }}
+                                                    >
                                                         <td className="fw-bold">#{order.id}</td>
                                                         <td>{this.formatDate(order.date)}</td>
                                                         <td>{order.items.length} {langCtx.getText('items')}</td>
@@ -211,6 +254,128 @@ class BillHistoryPage extends React.Component {
                                         </table>
                                         {totalPages > 1 && this.renderPagination(langCtx, currentPage, totalPages)}
                                     </TableWrapper>
+                                )}
+
+                                {/* ── Customer Order Details Modal (Read-only) ── */}
+                                {orderModalOpen && selectedOrder && (
+                                    <ModalOverlay onClick={this.closeOrderModal}>
+                                        <ModalContent
+                                            style={{ maxWidth: '720px', width: '100%' }}
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <div className="modal-header">
+                                                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                                    🛵 {langCtx.getText('orderDetails')} — #{selectedOrder.id}
+                                                    <Badge className={this.getStatusBadge(selectedOrder.status)}>
+                                                        {selectedOrder.status === 'Pending' && '⏳ '}
+                                                        {selectedOrder.status === 'Verified' && '✅ '}
+                                                        {selectedOrder.status === 'Delivered' && '📦 '}
+                                                        {selectedOrder.status}
+                                                    </Badge>
+                                                    {selectedOrder.status !== 'Pending' && (
+                                                        <span
+                                                            style={{
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                gap: '0.2rem',
+                                                                background: '#495057',
+                                                                color: 'white',
+                                                                borderRadius: '4px',
+                                                                padding: '0.15rem 0.5rem',
+                                                                fontSize: '0.68rem',
+                                                                fontWeight: '700',
+                                                                letterSpacing: '0.5px',
+                                                                textTransform: 'uppercase',
+                                                            }}
+                                                        >
+                                                            🔒 Order Finalized
+                                                        </span>
+                                                    )}
+                                                </h3>
+                                                <button className="close-btn" onClick={this.closeOrderModal}>
+                                                    ×
+                                                </button>
+                                            </div>
+
+                                            <div className="modal-body">
+                                                {orderModalLoading ? (
+                                                    <Spinner text="Loading order..." />
+                                                ) : (
+                                                    <>
+                                                        <div className="mb-2 text-muted" style={{ fontSize: '0.82rem' }}>
+                                                            📅 {this.formatDate(selectedOrder.date)}
+                                                        </div>
+
+                                                        <div
+                                                            style={{
+                                                                border: '1px solid #e9ecef',
+                                                                borderRadius: '8px',
+                                                                overflow: 'hidden',
+                                                            }}
+                                                        >
+                                                            <table className="table table-sm mb-0">
+                                                                <thead style={{ background: '#f8f9fa' }}>
+                                                                    <tr>
+                                                                        <th>{langCtx.getText('productName')}</th>
+                                                                        <th className="text-center" style={{ width: '110px' }}>
+                                                                            {langCtx.getText('quantity')}
+                                                                        </th>
+                                                                        <th className="text-center" style={{ width: '90px' }}>
+                                                                            {langCtx.getText('price')}
+                                                                        </th>
+                                                                        <th className="text-end" style={{ width: '110px' }}>
+                                                                            {langCtx.getText('total')}
+                                                                        </th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {selectedOrder.items.map((item) => (
+                                                                        <tr key={item.productId}>
+                                                                            <td style={{ fontSize: '0.9rem', fontWeight: 600 }}>
+                                                                                {item.name}
+                                                                            </td>
+                                                                            <td className="text-center">{item.quantity}</td>
+                                                                            <td className="text-center">₹{item.price}</td>
+                                                                            <td className="text-end fw-bold" style={{ color: '#2E7D32' }}>
+                                                                                ₹{(item.total || item.price * item.quantity).toFixed(2)}
+                                                                            </td>
+                                                                        </tr>
+                                                                    ))}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+
+                                                        <div
+                                                            className="d-flex justify-content-between align-items-center mt-3"
+                                                            style={{
+                                                                background: '#f8f9fa',
+                                                                border: '1px solid #e9ecef',
+                                                                borderRadius: '8px',
+                                                                padding: '0.65rem 0.85rem',
+                                                            }}
+                                                        >
+                                                            <span className="fw-semibold text-muted">
+                                                                {langCtx.getText('total')}:
+                                                            </span>
+                                                            <span className="fw-bold" style={{ color: '#2E7D32', fontSize: '1.05rem' }}>
+                                                                ₹{selectedOrder.grandTotal.toFixed(2)}
+                                                            </span>
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
+
+                                            <div className="modal-footer" style={{ flexWrap: 'wrap', gap: '0.5rem' }}>
+                                                <button
+                                                    className="btn btn-outline-secondary btn-sm"
+                                                    onClick={this.closeOrderModal}
+                                                    style={{ fontSize: '0.82rem', fontWeight: '600' }}
+                                                >
+                                                    {langCtx.getText('close')}
+                                                </button>
+                                            </div>
+                                        </ModalContent>
+                                    </ModalOverlay>
                                 )}
                             </>
                         )}

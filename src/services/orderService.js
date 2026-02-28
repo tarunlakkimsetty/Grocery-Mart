@@ -93,6 +93,20 @@ const orderService = {
         }
     },
 
+    // Customer: fetch updated orders (final verified view)
+    // API: GET /api/orders/customer/:customerId
+    getCustomerOrders: async (customerId) => {
+        try {
+            const response = await axiosInstance.get('/orders/customer/' + customerId);
+            return response.data;
+        } catch {
+            // Fallback to existing mock/user endpoint behavior
+            return mockOrders
+                .filter((o) => o.userId === customerId)
+                .sort((a, b) => new Date(b.date) - new Date(a.date));
+        }
+    },
+
     // Admin: get single order details
     getOrderById: async (orderId) => {
         try {
@@ -106,13 +120,76 @@ const orderService = {
     },
 
     // Admin: mark order as Verified
-    verifyOrder: async (orderId) => {
+    // API: PUT /api/orders/:id/verify
+    // Some backends may accept a payload (finalItems, grandTotal). Keep it optional.
+    verifyOrder: async (orderId, payload) => {
         try {
-            const response = await axiosInstance.put('/orders/' + orderId + '/verify');
+            const response = await axiosInstance.put('/orders/' + orderId + '/verify', payload);
             return response.data;
         } catch {
             const order = mockOrders.find((o) => o.id === parseInt(orderId));
-            if (order) order.status = 'Verified';
+            if (order) {
+                order.status = 'Verified';
+                if (payload && payload.items) {
+                    order.items = payload.items;
+                }
+                if (payload && typeof payload.grandTotal === 'number') {
+                    order.grandTotal = payload.grandTotal;
+                }
+            }
+            return order;
+        }
+    },
+
+    // Admin: add product to an order (before Verified)
+    // API: POST /api/orders/:id/add-item
+    addItemToOrder: async (orderId, productId, quantity) => {
+        try {
+            const response = await axiosInstance.post('/orders/' + orderId + '/add-item', {
+                productId,
+                quantity,
+            });
+            return response.data;
+        } catch {
+            const order = mockOrders.find((o) => o.id === parseInt(orderId));
+            if (!order) throw new Error('Order not found');
+            if (order.status !== 'Pending') throw new Error('Order is locked');
+
+            const existing = order.items.find((i) => i.productId === productId);
+            if (existing) {
+                existing.quantity += quantity;
+                existing.total = existing.price * existing.quantity;
+            } else {
+                // In mock mode, caller is expected to provide name/price via update-items.
+                order.items.push({
+                    productId,
+                    name: 'New Product',
+                    price: 0,
+                    quantity,
+                    total: 0,
+                });
+            }
+            order.grandTotal = order.items.reduce((sum, i) => sum + (i.total || 0), 0);
+            return order;
+        }
+    },
+
+    // Admin: update order items before verification (final selected items)
+    // API: PUT /api/orders/:id/update-items
+    updateOrderBeforeVerify: async (orderId, items, grandTotal) => {
+        try {
+            const response = await axiosInstance.put('/orders/' + orderId + '/update-items', {
+                items,
+                grandTotal,
+            });
+            return response.data;
+        } catch {
+            const order = mockOrders.find((o) => o.id === parseInt(orderId));
+            if (!order) throw new Error('Order not found');
+            if (order.status !== 'Pending') throw new Error('Order is locked');
+
+            order.items = items;
+            order.grandTotal = grandTotal;
             return order;
         }
     },

@@ -1,6 +1,7 @@
 import React from 'react';
 import LanguageContext from '../context/LanguageContext';
 import orderService from '../services/orderService';
+import productService from '../services/productService';
 import Spinner from '../components/Spinner';
 import { toast } from 'react-toastify';
 import styled from 'styled-components';
@@ -174,6 +175,8 @@ class AdminOnlineOrdersPage extends React.Component {
             orders: [],
             loading: true,
             error: null,
+            products: [],
+            productsLoading: false,
             // Modal
             selectedOrder: null,
             modalOpen: false,
@@ -182,11 +185,15 @@ class AdminOnlineOrdersPage extends React.Component {
             checkedItems: {},
             // Editable items inside open modal (deep copy of selectedOrder.items)
             modalItems: [],
+            // Add Product section state (Pending only)
+            addProductId: '',
+            addProductQty: 1,
         };
     }
 
     componentDidMount() {
         this.fetchOrders();
+        this.fetchProducts();
     }
 
     // ─── Data Fetching ─────────────────────────────────────────────────────────
@@ -202,11 +209,25 @@ class AdminOnlineOrdersPage extends React.Component {
         }
     };
 
+    fetchProducts = async () => {
+        this.setState({ productsLoading: true });
+        try {
+            const products = await productService.getProducts();
+            this.setState({ products, productsLoading: false });
+        } catch (err) {
+            this.setState({ productsLoading: false });
+            toast.error('Failed to load products');
+        }
+    };
+
     // ─── Modal Open / Close ────────────────────────────────────────────────────
 
     openModal = (order) => {
         // Initialize checked items for this order if not already tracked
-        const existingChecked = this.state.checkedItems[order.id] || new Set();
+        const hasTracked = Object.prototype.hasOwnProperty.call(this.state.checkedItems, order.id);
+        const existingChecked = hasTracked
+            ? this.state.checkedItems[order.id]
+            : new Set(order.items.map((item) => item.productId));
         this.setState({
             selectedOrder: order,
             modalOpen: true,
@@ -216,6 +237,8 @@ class AdminOnlineOrdersPage extends React.Component {
                 ...this.state.checkedItems,
                 [order.id]: existingChecked,
             },
+            addProductId: '',
+            addProductQty: 1,
         });
     };
 
@@ -260,6 +283,85 @@ class AdminOnlineOrdersPage extends React.Component {
         this.setState({ modalItems: updatedItems });
     };
 
+    // ─── Add Product to Order (Pending Only) ─────────────────────────────────
+
+    onChangeAddProductId = (e) => {
+        this.setState({ addProductId: e.target.value });
+    };
+
+    onChangeAddProductQty = (e) => {
+        const raw = e.target.value;
+        const qty = Math.max(1, parseInt(raw, 10) || 1);
+        this.setState({ addProductQty: qty });
+    };
+
+    handleAddProductToOrder = async () => {
+        const { selectedOrder, addProductId, addProductQty, products, modalItems, checkedItems } = this.state;
+        if (!selectedOrder || selectedOrder.status !== 'Pending') return;
+
+        const productId = parseInt(addProductId, 10);
+        if (!productId) {
+            toast.warning('Please select a product');
+            return;
+        }
+
+        const quantity = Math.max(1, parseInt(addProductQty, 10) || 1);
+        const product = products.find((p) => p.id === productId);
+        if (!product) {
+            toast.error('Selected product not found');
+            return;
+        }
+
+        this.setState({ actionLoading: true });
+        try {
+            // Backend integration: add item before verification
+            await orderService.addItemToOrder(selectedOrder.id, productId, quantity);
+
+            const existingIdx = modalItems.findIndex((i) => i.productId === productId);
+            let nextModalItems = [];
+            if (existingIdx !== -1) {
+                nextModalItems = modalItems.map((i) => {
+                    if (i.productId !== productId) return i;
+                    const nextQty = (i.quantity || 0) + quantity;
+                    return {
+                        ...i,
+                        quantity: nextQty,
+                        total: (i.price || product.price) * nextQty,
+                    };
+                });
+            } else {
+                nextModalItems = [
+                    ...modalItems,
+                    {
+                        productId: productId,
+                        name: product.name,
+                        price: product.price,
+                        quantity: quantity,
+                        total: product.price * quantity,
+                    },
+                ];
+            }
+
+            // Default = checked
+            const currentSet = new Set(checkedItems[selectedOrder.id] || []);
+            currentSet.add(productId);
+
+            this.setState({
+                modalItems: nextModalItems,
+                checkedItems: {
+                    ...checkedItems,
+                    [selectedOrder.id]: currentSet,
+                },
+                addProductId: '',
+                addProductQty: 1,
+            });
+        } catch (err) {
+            toast.error(err.message || 'Failed to add product to order');
+        } finally {
+            this.setState({ actionLoading: false });
+        }
+    };
+
     // ─── Computed: Checked Total (PART 1) ─────────────────────────────────────
 
     getCheckedTotal = () => {
@@ -286,15 +388,56 @@ class AdminOnlineOrdersPage extends React.Component {
     handleVerify = async (orderId) => {
         this.setState({ actionLoading: true });
         try {
+            const { selectedOrder, modalItems, checkedItems } = this.state;
+            if (!selectedOrder || selectedOrder.id !== orderId) return;
+            if (selectedOrder.status !== 'Pending') return;
+
+            const checkedSet = checkedItems[orderId] || new Set(modalItems.map((i) => i.productId));
+            if (!checkedSet || checkedSet.size === 0) {
+                toast.warning('Select at least one item before verifying');
+                return;
+            }
+
+            const finalItems = modalItems
+                .filter((i) => checkedSet.has(i.productId))
+                .map((i) => ({
+                    ...i,
+                    quantity: Math.max(1, parseInt(i.quantity, 10) || 1),
+                    total: (i.price || 0) * (Math.max(1, parseInt(i.quantity, 10) || 1)),
+                }));
+
+            const finalTotal = finalItems.reduce((sum, i) => sum + (i.total || 0), 0);
+
+            // Persist final items + total BEFORE verifying (backend will lock afterwards)
+            await orderService.updateOrderBeforeVerify(orderId, finalItems, finalTotal);
             await orderService.verifyOrder(orderId);
+
             const orders = this.state.orders.map((o) =>
-                o.id === orderId ? { ...o, status: 'Verified' } : o
+                o.id === orderId
+                    ? { ...o, status: 'Verified', items: finalItems, grandTotal: finalTotal }
+                    : o
             );
-            const selectedOrder = this.state.selectedOrder
-                ? { ...this.state.selectedOrder, status: 'Verified' }
+
+            const nextSelectedOrder = this.state.selectedOrder
+                ? {
+                      ...this.state.selectedOrder,
+                      status: 'Verified',
+                      items: finalItems,
+                      grandTotal: finalTotal,
+                  }
                 : null;
-            this.setState({ orders, selectedOrder });
-            toast.success('Order #' + orderId + ' marked as Verified ✅');
+
+            this.setState({
+                orders,
+                selectedOrder: nextSelectedOrder,
+                modalItems: finalItems,
+                checkedItems: {
+                    ...checkedItems,
+                    [orderId]: new Set(finalItems.map((i) => i.productId)),
+                },
+            });
+
+            toast.success('Order verified and synced with customer.');
         } catch (err) {
             toast.error('Failed to update order status');
         } finally {
@@ -403,6 +546,10 @@ class AdminOnlineOrdersPage extends React.Component {
                         checkedItems,
                         modalItems,
                         actionLoading,
+                        products,
+                        productsLoading,
+                        addProductId,
+                        addProductQty,
                     } = this.state;
 
                     // Checked total for modal
@@ -419,6 +566,7 @@ class AdminOnlineOrdersPage extends React.Component {
                     // Lock editing once order moves past Pending
                     const isLocked =
                         selectedOrder && selectedOrder.status !== 'Pending';
+                    const isPending = selectedOrder && selectedOrder.status === 'Pending';
 
                     return (
                         <div>
@@ -520,7 +668,7 @@ class AdminOnlineOrdersPage extends React.Component {
                                                         letterSpacing: '0.5px',
                                                         textTransform: 'uppercase',
                                                     }}>
-                                                        🔒 Locked
+                                                        🔒 Order Finalized
                                                     </span>
                                                 )}
                                             </h3>
@@ -591,6 +739,71 @@ class AdminOnlineOrdersPage extends React.Component {
                                                 </div>
                                             </div>
 
+                                            {/* ── NEW: Add Product to Order (Pending Only) ── */}
+                                            {isPending && (
+                                                <div
+                                                    style={{
+                                                        background: '#f8f9fa',
+                                                        borderRadius: '8px',
+                                                        padding: '0.9rem 1rem',
+                                                        marginBottom: '1rem',
+                                                        border: '1px solid #e9ecef',
+                                                    }}
+                                                >
+                                                    <SectionTitle>➕ Add Product to Order</SectionTitle>
+                                                    <div className="row g-2 align-items-end">
+                                                        <div className="col-12 col-md-7">
+                                                            <label className="form-label small fw-semibold mb-1">
+                                                                Product
+                                                            </label>
+                                                            <select
+                                                                className="form-select"
+                                                                value={addProductId}
+                                                                onChange={this.onChangeAddProductId}
+                                                                disabled={actionLoading || productsLoading}
+                                                            >
+                                                                <option value="">Select product...</option>
+                                                                {products.map((p) => (
+                                                                    <option key={p.id} value={p.id}>
+                                                                        {p.name} — ₹{p.price}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                        <div className="col-6 col-md-3">
+                                                            <label className="form-label small fw-semibold mb-1">
+                                                                Quantity
+                                                            </label>
+                                                            <input
+                                                                type="number"
+                                                                className="form-control"
+                                                                min="1"
+                                                                value={addProductQty}
+                                                                onChange={this.onChangeAddProductQty}
+                                                                disabled={actionLoading}
+                                                            />
+                                                        </div>
+                                                        <div className="col-6 col-md-2 d-grid">
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-primary btn-sm"
+                                                                onClick={this.handleAddProductToOrder}
+                                                                disabled={actionLoading || productsLoading}
+                                                                style={{ fontWeight: '700' }}
+                                                            >
+                                                                Add
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <small
+                                                        className="text-muted d-block mt-2"
+                                                        style={{ fontSize: '0.78rem' }}
+                                                    >
+                                                        Added items are selected by default and included in the total.
+                                                    </small>
+                                                </div>
+                                            )}
+
                                             {/* ── PART 1 & 2: Ordered Items with Checkboxes + Qty Edit ── */}
                                             <SectionTitle>📦 {langCtx.getText('orderedItems')}</SectionTitle>
 
@@ -615,7 +828,7 @@ class AdminOnlineOrdersPage extends React.Component {
                                                     fontSize: '0.82rem',
                                                     color: '#495057',
                                                 }}>
-                                                    🔒 <span>This order is <strong>verified</strong> and cannot be modified. Items and quantities are read-only.</span>
+                                                    🔒 <span>This order is <strong>finalized</strong> and cannot be modified. Items and quantities are read-only.</span>
                                                 </div>
                                             )}
 
